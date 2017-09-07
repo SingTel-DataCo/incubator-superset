@@ -8,6 +8,12 @@ Customisations:
     * Planning Region
     * Planning Area
     * Sub Zone
+* GeoJSON files for Australia
+    * State
+    * SA4
+    * SA3
+    * SA2
+    * SA1
 
 ## Development Environment
 

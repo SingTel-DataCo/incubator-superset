@@ -284,6 +284,11 @@ export const controls = {
     label: 'Country Name',
     default: 'France',
     choices: [
+      'Australia_State',
+      'Australia_SA4',
+      'Australia_SA3',
+      'Australia_SA2',
+      'Australia_SA1',
       'Belgium',
       'Brazil',
       'China',
