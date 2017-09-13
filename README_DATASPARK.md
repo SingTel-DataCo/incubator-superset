@@ -24,11 +24,25 @@ Mac OS instructions:
 virtualenv env
 source env/bin/activate
 
-# Install dependencies
-brew install pkg-config libffi openssl python
+# Update the file setup.py
+Under the section install_requires, add the following line:
+'flask==0.12.1',
 
-# Install for development
+
+# Install dependencies(For MAC only)
+brew install pkg-config libffi openssl python
 LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" python setup.py develop
+
+# Install dependencies(For Fedora and RHEL-derivatives Only)
+sudo yum upgrade python-setuptools
+sudo yum install gcc gcc-c++ libffi-devel python-devel python-pip python-wheel openssl-devel libsasl2-devel openldap-devel
+python setup.py develop
+
+# To install postgres driver
+pip install psycopg2
+
+# Copy superset_config.py to PYTHONPATH (Eg: /usr/lib/python2.7)
+# Change owner to dataspark user and set Perm as 755
 
 # Create an admin user
 fabmanager create-admin --app superset
