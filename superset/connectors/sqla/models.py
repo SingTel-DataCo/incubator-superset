@@ -11,7 +11,8 @@ from sqlalchemy import (
 )
 import sqlalchemy as sa
 from sqlalchemy import asc, and_, desc, select
-from sqlalchemy.sql.expression import TextAsFrom
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.expression import ColumnClause, TextAsFrom
 from sqlalchemy.orm import backref, relationship
 from sqlalchemy.sql import table, literal_column, text, column
 
@@ -20,7 +21,7 @@ from flask_appbuilder import Model
 from flask_babel import lazy_gettext as _
 
 from superset import db, utils, import_util, sm
-from superset.connectors.base.models import BaseDatasource, BaseColumn, BaseMetric
+from superset.connectors.base import BaseDatasource, BaseColumn, BaseMetric
 from superset.utils import DTTM_ALIAS, QueryStatus
 from superset.models.helpers import QueryResult
 from superset.models.core import Database
@@ -61,12 +62,10 @@ class TableColumn(Model, BaseColumn):
 
     def get_time_filter(self, start_dttm, end_dttm):
         col = self.sqla_col.label('__time')
-        l = []
-        if start_dttm:
-            l.append(col >= text(self.dttm_sql_literal(start_dttm)))
-        if end_dttm:
-            l.append(col <= text(self.dttm_sql_literal(end_dttm)))
-        return and_(*l)
+        return and_(
+            col >= text(self.dttm_sql_literal(start_dttm)),
+            col <= text(self.dttm_sql_literal(end_dttm)),
+        )
 
     def get_timestamp_expression(self, time_grain):
         """Getting the time component of the query"""
@@ -179,6 +178,11 @@ class SqlaTable(Model, BaseDatasource):
         foreign_keys=[database_id])
     schema = Column(String(255))
     sql = Column(Text)
+    slices = relationship(
+        'Slice',
+        primaryjoin=(
+            "SqlaTable.id == foreign(Slice.datasource_id) and "
+            "Slice.datasource_type == 'table'"))
 
     baselink = "tablemodelview"
     export_fields = (
@@ -193,10 +197,6 @@ class SqlaTable(Model, BaseDatasource):
 
     def __repr__(self):
         return self.name
-
-    @property
-    def connection(self):
-        return str(self.database)
 
     @property
     def description_markeddown(self):
@@ -291,12 +291,10 @@ class SqlaTable(Model, BaseDatasource):
         """
         cols = {col.column_name: col for col in self.columns}
         target_col = cols[column_name]
-        tp = self.get_template_processor()
-        db_engine_spec = self.database.db_engine_spec
 
         qry = (
             select([target_col.sqla_col])
-            .select_from(self.get_from_clause(tp, db_engine_spec))
+            .select_from(self.get_from_clause())
             .distinct(column_name)
         )
         if limit:
@@ -330,6 +328,7 @@ class SqlaTable(Model, BaseDatasource):
         )
         logging.info(sql)
         sql = sqlparse.format(sql, reindent=True)
+        sql = self.database.db_engine_spec.sql_preprocessor(sql)
         return sql
 
     def get_sqla_table(self):
@@ -338,14 +337,12 @@ class SqlaTable(Model, BaseDatasource):
             tbl.schema = self.schema
         return tbl
 
-    def get_from_clause(self, template_processor=None, db_engine_spec=None):
+    def get_from_clause(self, template_processor=None):
         # Supporting arbitrary SQL statements in place of tables
         if self.sql:
             from_sql = self.sql
             if template_processor:
                 from_sql = template_processor.process_template(from_sql)
-            if db_engine_spec:
-                from_sql = db_engine_spec.escape_sql(from_sql)
             return TextAsFrom(sa.text(from_sql), []).alias('expr_qry')
         return self.get_sqla_table()
 
@@ -364,9 +361,9 @@ class SqlaTable(Model, BaseDatasource):
             orderby=None,
             extras=None,
             columns=None,
-            form_data=None,
-            order_desc=True):
+            form_data=None):
         """Querying any sqla table from this common interface"""
+
         template_kwargs = {
             'from_dttm': from_dttm,
             'groupby': groupby,
@@ -376,14 +373,13 @@ class SqlaTable(Model, BaseDatasource):
             'form_data': form_data,
         }
         template_processor = self.get_template_processor(**template_kwargs)
-        db_engine_spec = self.database.db_engine_spec
 
         # For backward compatibility
         if granularity not in self.dttm_cols:
             granularity = self.main_dttm_col
 
         # Database spec supports join-free timeslot grouping
-        time_groupby_inline = db_engine_spec.time_groupby_inline
+        time_groupby_inline = self.database.db_engine_spec.time_groupby_inline
 
         cols = {col.column_name: col for col in self.columns}
         metrics_dict = {m.metric_name: m for m in self.metrics}
@@ -438,7 +434,7 @@ class SqlaTable(Model, BaseDatasource):
                 groupby_exprs += [timestamp]
 
             # Use main dttm column to support index with secondary dttm columns
-            if db_engine_spec.time_secondary_columns and \
+            if self.database.db_engine_spec.time_secondary_columns and \
                     self.main_dttm_col in self.dttm_cols and \
                     self.main_dttm_col != dttm_col.column_name:
                 time_filters.append(cols[self.main_dttm_col].
@@ -448,7 +444,7 @@ class SqlaTable(Model, BaseDatasource):
         select_exprs += metrics_exprs
         qry = sa.select(select_exprs)
 
-        tbl = self.get_from_clause(template_processor, db_engine_spec)
+        tbl = self.get_from_clause(template_processor)
 
         if not columns:
             qry = qry.group_by(*groupby_exprs)
@@ -513,8 +509,7 @@ class SqlaTable(Model, BaseDatasource):
             qry = qry.where(and_(*where_clause_and))
         qry = qry.having(and_(*having_clause_and))
         if groupby:
-            direction = desc if order_desc else asc
-            qry = qry.order_by(direction(main_metric_expr))
+            qry = qry.order_by(desc(main_metric_expr))
         elif orderby:
             for col, ascending in orderby:
                 direction = asc if ascending else desc
@@ -541,8 +536,7 @@ class SqlaTable(Model, BaseDatasource):
             ob = inner_main_metric_expr
             if timeseries_limit_metric_expr is not None:
                 ob = timeseries_limit_metric_expr
-            direction = desc if order_desc else asc
-            subq = subq.order_by(direction(ob))
+            subq = subq.order_by(desc(ob))
             subq = subq.limit(timeseries_limit)
             on_clause = []
             for i, gb in enumerate(groupby):
@@ -582,9 +576,9 @@ class SqlaTable(Model, BaseDatasource):
         try:
             table = self.get_sqla_table_object()
         except Exception:
-            raise Exception(_(
+            raise Exception(
                 "Table doesn't seem to exist in the specified database, "
-                "couldn't fetch column information"))
+                "couldn't fetch column information")
 
         TC = TableColumn  # noqa shortcut to class
         M = SqlMetric  # noqa

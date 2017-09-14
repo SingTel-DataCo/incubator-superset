@@ -1,11 +1,20 @@
 {% extends "superset/basic.html" %}
 
+{% block head_js %}
+  {{ super() }}
+  {% with filename="dashboard" %}
+    {% include "superset/partials/_script_tag.html" %}
+  {% endwith %}
+{% endblock %}
+{% block title %}[dashboard] {{ dashboard_title }}{% endblock %}
 {% block body %}
+
 <div
   class="dashboard container-fluid"
   data-bootstrap="{{ bootstrap_data }}"
 >
-  <div id="alert-container"></div>
+  {% include 'superset/flash_wrapper.html' %}
+
   <div id="dashboard-header"></div>
 
   <!-- gridster class used for backwards compatibility -->

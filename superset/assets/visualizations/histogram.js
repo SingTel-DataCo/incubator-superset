@@ -1,5 +1,5 @@
 import d3 from 'd3';
-import { getColorFromScheme } from '../javascripts/modules/colors';
+import { category21 } from '../javascripts/modules/colors';
 
 require('./histogram.css');
 
@@ -76,7 +76,7 @@ function histogram(slice, payload) {
     .attr('x', d => x(d.x))
     .attr('y', d => y(d.y))
     .attr('height', d => y.range()[0] - y(d.y))
-    .style('fill', d => getColorFromScheme(d.length, slice.formData.color_scheme))
+    .style('fill', d => category21(d.length))
     .order();
 
     // Find maximum length to position the ticks on top of the bar correctly

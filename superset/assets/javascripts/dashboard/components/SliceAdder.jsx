@@ -37,11 +37,7 @@ class SliceAdder extends React.Component {
     };
   }
 
-  componentWillUnmount() {
-    this.slicesRequest.abort();
-  }
-
-  onEnterModal() {
+  componentDidMount() {
     const uri = '/sliceaddview/api/read?_flt_0_created_by=' + this.props.dashboard.curUserId;
     this.slicesRequest = $.ajax({
       url: uri,
@@ -68,6 +64,10 @@ class SliceAdder extends React.Component {
         });
       },
     });
+  }
+
+  componentWillUnmount() {
+    this.slicesRequest.abort();
   }
 
   addSlices() {
@@ -129,13 +129,8 @@ class SliceAdder extends React.Component {
             height="auto"
           >
             <TableHeaderColumn
-              dataField="id"
-              isKey
-              dataSort
-              hidden
-            />
-            <TableHeaderColumn
               dataField="sliceName"
+              isKey
               dataSort
             >
               Name
@@ -173,7 +168,6 @@ class SliceAdder extends React.Component {
       <ModalTrigger
         triggerNode={this.props.triggerNode}
         tooltip="Add a new slice to the dashboard"
-        beforeOpen={this.onEnterModal.bind(this)}
         isButton
         modalBody={modalContent}
         bsSize="large"

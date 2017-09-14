@@ -11,16 +11,14 @@ import AlertsWrapper from '../components/AlertsWrapper';
 import { getControlsState, getFormDataFromControls } from './stores/store';
 import { initJQueryAjax } from '../modules/utils';
 import ExploreViewContainer from './components/ExploreViewContainer';
-import rootReducer from './reducers/index';
-
+import { exploreReducer } from './reducers/exploreReducer';
 import { appSetup } from '../common';
 import './main.css';
-import '../../stylesheets/reactable-pagination.css';
 
 appSetup();
 initJQueryAjax();
 
-const exploreViewContainer = document.getElementById('app');
+const exploreViewContainer = document.getElementById('js-explore-view-container');
 const bootstrapData = JSON.parse(exploreViewContainer.getAttribute('data-bootstrap'));
 const controls = getControlsState(bootstrapData, bootstrapData.form_data);
 delete bootstrapData.form_data;
@@ -29,38 +27,31 @@ delete bootstrapData.form_data;
 // Initial state
 const bootstrappedState = Object.assign(
   bootstrapData, {
-    controls,
-    filterColumnOpts: [],
-    isDatasourceMetaLoading: false,
-    isStarred: false,
-    triggerQuery: true,
-    triggerRender: false,
-  },
-);
-
-const initState = {
-  chart: {
-    chartAlert: null,
     chartStatus: null,
     chartUpdateEndTime: null,
     chartUpdateStartTime: now(),
-    latestQueryFormData: getFormDataFromControls(controls),
-    queryResponse: null,
-  },
-  saveModal: {
     dashboards: [],
-    saveModalAlert: null,
+    controls,
+    latestQueryFormData: getFormDataFromControls(controls),
+    filterColumnOpts: [],
+    isDatasourceMetaLoading: false,
+    isStarred: false,
+    queryResponse: null,
+    triggerQuery: true,
+    triggerRender: false,
+    alert: null,
   },
-  explore: bootstrappedState,
-};
-const store = createStore(rootReducer, initState,
+);
+
+const store = createStore(exploreReducer, bootstrappedState,
   compose(applyMiddleware(thunk), initEnhancer(false)),
 );
+
 ReactDOM.render(
   <Provider store={store}>
     <div>
       <ExploreViewContainer />
-      <AlertsWrapper initMessages={bootstrappedState.common.flash_messages} />
+      <AlertsWrapper />
     </div>
   </Provider>,
   exploreViewContainer,

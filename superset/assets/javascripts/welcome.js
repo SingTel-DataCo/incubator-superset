@@ -1,12 +1,13 @@
 /* eslint no-unused-vars: 0 */
-import d3 from 'd3';
+import 'datatables.net';
 import dt from 'datatables.net-bs';
-import 'datatables.net-bs/css/dataTables.bootstrap.css';
+import d3 from 'd3';
 
 import '../stylesheets/welcome.css';
 import { appSetup } from './common';
 
 appSetup();
+require('datatables-bootstrap3-plugin/media/css/datatables-bootstrap3.css');
 
 dt(window, $);
 

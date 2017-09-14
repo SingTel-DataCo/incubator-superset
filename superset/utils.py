@@ -20,7 +20,7 @@ import sys
 import zlib
 
 from builtins import object
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time
 
 import celery
 from dateutil.parser import parse
@@ -40,7 +40,7 @@ from flask_babel import gettext as __
 import markdown as md
 from past.builtins import basestring
 from pydruid.utils.having import Having
-from sqlalchemy import event, exc, select
+from sqlalchemy import event, exc
 from sqlalchemy.types import TypeDecorator, TEXT
 
 logging.getLogger('MARKDOWN').setLevel(logging.INFO)
@@ -198,18 +198,12 @@ def parse_human_datetime(s):
     >>> year_ago_1 == year_ago_2
     True
     """
-    if not s:
-        return None
     try:
         dttm = parse(s)
     except Exception:
         try:
             cal = parsedatetime.Calendar()
-            parsed_dttm, parsed_flags = cal.parseDT(s)
-            # when time is not extracted, we "reset to midnight"
-            if parsed_flags & 2 == 0:
-                parsed_dttm = parsed_dttm.replace(hour=0, minute=0, second=0)
-            dttm = dttm_from_timtuple(parsed_dttm.utctimetuple())
+            dttm = dttm_from_timtuple(cal.parse(s)[0])
         except Exception as e:
             logging.exception(e)
             raise ValueError("Couldn't parse date string [{}]".format(s))
@@ -277,8 +271,6 @@ def base_json_conv(obj):
     elif isinstance(obj, decimal.Decimal):
         return float(obj)
     elif isinstance(obj, uuid.UUID):
-        return str(obj)
-    elif isinstance(obj, timedelta):
         return str(obj)
 
 
@@ -444,42 +436,19 @@ class timeout(object):
             logging.warning("timeout can't be used in the current context")
             logging.exception(e)
 
-
-def pessimistic_connection_handling(some_engine):
-    @event.listens_for(some_engine, "engine_connect")
-    def ping_connection(connection, branch):
-        if branch:
-            # "branch" refers to a sub-connection of a connection,
-            # we don't want to bother pinging on these.
-            return
-
-        # turn off "close with result".  This flag is only used with
-        # "connectionless" execution, otherwise will be False in any case
-        save_should_close_with_result = connection.should_close_with_result
-        connection.should_close_with_result = False
-
+def pessimistic_connection_handling(target):
+    @event.listens_for(target, "checkout")
+    def ping_connection(dbapi_connection, connection_record, connection_proxy):
+        """
+        Disconnect Handling - Pessimistic, taken from:
+        http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html
+        """
+        cursor = dbapi_connection.cursor()
         try:
-            # run a SELECT 1.   use a core select() so that
-            # the SELECT of a scalar value without a table is
-            # appropriately formatted for the backend
-            connection.scalar(select([1]))
-        except exc.DBAPIError as err:
-            # catch SQLAlchemy's DBAPIError, which is a wrapper
-            # for the DBAPI's exception.  It includes a .connection_invalidated
-            # attribute which specifies if this connection is a "disconnect"
-            # condition, which is based on inspection of the original exception
-            # by the dialect in use.
-            if err.connection_invalidated:
-                # run the same SELECT again - the connection will re-validate
-                # itself and establish a new connection.  The disconnect detection
-                # here also causes the whole connection pool to be invalidated
-                # so that all stale connections are discarded.
-                connection.scalar(select([1]))
-            else:
-                raise
-        finally:
-            # restore "close with result"
-            connection.should_close_with_result = save_should_close_with_result
+            cursor.execute("SELECT 1")
+        except:
+            raise exc.DisconnectionError()
+        cursor.close()
 
 
 class QueryStatus(object):

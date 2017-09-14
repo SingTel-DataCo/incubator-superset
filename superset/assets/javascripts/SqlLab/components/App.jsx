@@ -70,7 +70,7 @@ class App extends React.PureComponent {
     }
     return (
       <div className="App SqlLab">
-        <AlertsWrapper initMessages={this.props.initMessages} />
+        <AlertsWrapper />
         <div className="container-fluid">
           {content}
         </div>
@@ -82,13 +82,11 @@ class App extends React.PureComponent {
 App.propTypes = {
   alerts: PropTypes.array,
   actions: PropTypes.object,
-  initMessages: PropTypes.array,
 };
 
 function mapStateToProps(state) {
   return {
     alerts: state.alerts,
-    initMessages: state.flash_messages,
   };
 }
 function mapDispatchToProps(dispatch) {

@@ -1,7 +1,6 @@
 import React from 'react';
 import { formatSelectOptionsForRange, formatSelectOptions } from '../../modules/utils';
 import * as v from '../validators';
-import { ALL_COLOR_SCHEMES, spectrums } from '../../modules/colors';
 import MetricOption from '../../components/MetricOption';
 import ColumnOption from '../../components/ColumnOption';
 
@@ -29,45 +28,24 @@ export const D3_TIME_FORMAT_OPTIONS = [
   ['%H:%M:%S', '%H:%M:%S | 01:32:10'],
 ];
 
-const timeColumnOption = {
-  verbose_name: 'Time',
-  column_name: '__timestamp',
-  description: (
-    'A reference to the [Time] configuration, taking granularity into ' +
-    'account'),
-};
-
-const groupByControl = {
-  type: 'SelectControl',
-  multi: true,
-  label: 'Group by',
-  default: [],
-  includeTime: false,
-  description: 'One or many controls to group by',
-  optionRenderer: c => <ColumnOption column={c} />,
-  valueRenderer: c => <ColumnOption column={c} />,
-  valueKey: 'column_name',
-  mapStateToProps: (state, control) => {
-    const newState = {};
-    if (state.datasource) {
-      newState.options = state.datasource.columns.filter(c => c.groupby);
-      if (control && control.includeTime) {
-        newState.options.push(timeColumnOption);
-      }
-    }
-    return newState;
-  },
-};
-
 export const controls = {
   datasource: {
-    type: 'DatasourceControl',
+    type: 'SelectControl',
     label: 'Datasource',
+    isLoading: true,
+    clearable: false,
     default: null,
-    description: null,
-    mapStateToProps: state => ({
-      datasource: state.datasource,
-    }),
+    mapStateToProps: (state) => {
+      const datasources = state.datasources || [];
+      return {
+        choices: datasources,
+        isLoading: datasources.length === 0,
+        rightNode: state.datasource ?
+          <a href={state.datasource.edit_url}>edit</a>
+          : null,
+      };
+    },
+    description: '',
   },
 
   viz_type: {
@@ -94,7 +72,6 @@ export const controls = {
   y_axis_bounds: {
     type: 'BoundsControl',
     label: 'Y Axis Bounds',
-    renderTrigger: true,
     default: [null, null],
     description: (
       'Bounds for the Y axis. When left empty, the bounds are ' +
@@ -157,7 +134,7 @@ export const controls = {
   },
 
   linear_color_scheme: {
-    type: 'ColorSchemeControl',
+    type: 'SelectControl',
     label: 'Linear Color Scheme',
     choices: [
       ['fire', 'fire'],
@@ -166,11 +143,7 @@ export const controls = {
       ['black_white', 'black/white'],
     ],
     default: 'blue_white_yellow',
-    clearable: false,
     description: '',
-    renderTrigger: true,
-    schemes: spectrums,
-    isLinear: true,
   },
 
   normalize_across: {
@@ -244,14 +217,6 @@ export const controls = {
     description: null,
   },
 
-  pivot_margins: {
-    type: 'CheckboxControl',
-    label: 'Show totals',
-    renderTrigger: false,
-    default: true,
-    description: 'Display total row/column',
-  },
-
   show_markers: {
     type: 'CheckboxControl',
     label: 'Show Markers',
@@ -273,14 +238,6 @@ export const controls = {
     label: 'Sort Bars',
     default: false,
     description: 'Sort bars by x labels.',
-  },
-
-  combine_metric: {
-    type: 'CheckboxControl',
-    label: 'Combine Metrics',
-    default: false,
-    description: 'Display metrics side by side within each column, as ' +
-    'opposed to each column being displayed side by side for each metric.',
   },
 
   show_controls: {
@@ -327,6 +284,11 @@ export const controls = {
     label: 'Country Name',
     default: 'France',
     choices: [
+      'Australia_State',
+      'Australia_SA4',
+      'Australia_SA3',
+      'Australia_SA2',
+      'Australia_SA1',
       'Belgium',
       'Brazil',
       'China',
@@ -338,6 +300,9 @@ export const controls = {
       'Netherlands',
       'Russia',
       'Singapore',
+      'Singapore_Planning_Region',
+      'Singapore_Planning_Area',
+      'Singapore_Sub_Zone',
       'Spain',
       'Uk',
       'Ukraine',
@@ -359,12 +324,30 @@ export const controls = {
     'to find in the [country] column',
   },
 
-  groupby: groupByControl,
+  groupby: {
+    type: 'SelectControl',
+    multi: true,
+    label: 'Group by',
+    default: [],
+    description: 'One or many controls to group by',
+    optionRenderer: c => <ColumnOption column={c} />,
+    valueRenderer: c => <ColumnOption column={c} />,
+    valueKey: 'column_name',
+    mapStateToProps: state => ({
+      options: (state.datasource) ? state.datasource.columns : [],
+    }),
+  },
 
-  columns: Object.assign({}, groupByControl, {
+  columns: {
+    type: 'SelectControl',
+    multi: true,
     label: 'Columns',
+    mapStateToProps: state => ({
+      choices: (state.datasource) ? state.datasource.gb_cols : [],
+    }),
+    default: [],
     description: 'One or many controls to pivot as columns',
-  }),
+  },
 
   all_columns: {
     type: 'SelectControl',
@@ -416,18 +399,7 @@ export const controls = {
     label: 'Bottom Margin',
     choices: formatSelectOptions(['auto', 50, 75, 100, 125, 150, 200]),
     default: 'auto',
-    renderTrigger: true,
-    description: 'Bottom margin, in pixels, allowing for more room for axis labels',
-  },
-
-  left_margin: {
-    type: 'SelectControl',
-    freeForm: true,
-    label: 'Left Margin',
-    choices: formatSelectOptions(['auto', 50, 75, 100, 125, 150, 200]),
-    default: 'auto',
-    renderTrigger: true,
-    description: 'Left margin, in pixels, allowing for more room for axis labels',
+    description: 'Bottom marging, in pixels, allowing for more room for axis labels',
   },
 
   granularity: {
@@ -558,17 +530,37 @@ export const controls = {
   },
 
   since: {
-    type: 'DateFilterControl',
+    type: 'SelectControl',
     freeForm: true,
     label: 'Since',
     default: '7 days ago',
+    choices: formatSelectOptions([
+      '1 hour ago',
+      '12 hours ago',
+      '1 day ago',
+      '7 days ago',
+      '28 days ago',
+      '90 days ago',
+      '1 year ago',
+      '100 year ago',
+    ]),
+    description: 'Timestamp from filter. This supports free form typing and ' +
+    'natural language as in `1 day ago`, `28 days` or `3 years`',
   },
 
   until: {
-    type: 'DateFilterControl',
+    type: 'SelectControl',
     freeForm: true,
     label: 'Until',
     default: 'now',
+    choices: formatSelectOptions([
+      'now',
+      '1 day ago',
+      '7 days ago',
+      '28 days ago',
+      '90 days ago',
+      '1 year ago',
+    ]),
   },
 
   max_bubble_size: {
@@ -655,19 +647,6 @@ export const controls = {
     'relative to the time granularity selected',
   },
 
-  min_periods: {
-    type: 'TextControl',
-    label: 'Min Periods',
-    isInt: true,
-    description: (
-      'The minimum number of rolling periods required to show ' +
-      'a value. For instance if you do a cumulative sum on 7 days ' +
-      'you may want your "Min Period" to be 7, so that all data points ' +
-      'shown are the total of 7 periods. This will hide the "ramp up" ' +
-      'taking place over the first 7 periods'
-    ),
-  },
-
   series: {
     type: 'SelectControl',
     label: 'Series',
@@ -685,7 +664,7 @@ export const controls = {
     label: 'Entity',
     default: null,
     validators: [v.nonEmpty],
-    description: 'This defines the element to be plotted on the chart',
+    description: 'This define the element to be plotted on the chart',
     mapStateToProps: state => ({
       choices: (state.datasource) ? state.datasource.gb_cols : [],
     }),
@@ -900,7 +879,7 @@ export const controls = {
     label: 'Code',
     description: 'Put your code here',
     mapStateToProps: state => ({
-      language: state.controls && state.controls.markup_type ? state.controls.markup_type.value : 'markdown',
+      language: state.controls ? state.controls.markup_type.value : null,
     }),
     default: '',
   },
@@ -1009,14 +988,6 @@ export const controls = {
     renderTrigger: true,
     default: true,
     description: 'Whether to display the min and max values of the X axis',
-  },
-
-  y_axis_showminmax: {
-    type: 'CheckboxControl',
-    label: 'Y bounds',
-    renderTrigger: true,
-    default: true,
-    description: 'Whether to display the min and max values of the Y axis',
   },
 
   rich_tooltip: {
@@ -1306,34 +1277,6 @@ export const controls = {
     label: 'Cache Timeout (seconds)',
     hidden: true,
     description: 'The number of seconds before expiring the cache',
-  },
-
-  order_by_entity: {
-    type: 'CheckboxControl',
-    label: 'Order by entity id',
-    description: 'Important! Select this if the table is not already sorted by entity id, ' +
-    'else there is no guarantee that all events for each entity are returned.',
-    default: true,
-  },
-
-  min_leaf_node_event_count: {
-    type: 'SelectControl',
-    freeForm: false,
-    label: 'Minimum leaf node event count',
-    default: 1,
-    choices: formatSelectOptionsForRange(1, 10),
-    description: 'Leaf nodes that represent fewer than this number of events will be initially ' +
-    'hidden in the visualization',
-  },
-
-  color_scheme: {
-    type: 'ColorSchemeControl',
-    label: 'Color Scheme',
-    default: 'bnbColors',
-    renderTrigger: true,
-    choices: Object.keys(ALL_COLOR_SCHEMES).map(s => ([s, s])),
-    description: 'The color scheme for rendering chart',
-    schemes: ALL_COLOR_SCHEMES,
   },
 };
 export default controls;

@@ -10,92 +10,74 @@ const propTypes = {
   renderTrigger: PropTypes.bool,
   rightNode: PropTypes.node,
   leftNode: PropTypes.node,
-  onClick: PropTypes.func,
-  hovered: PropTypes.bool,
 };
 
 const defaultProps = {
   validationErrors: [],
   renderTrigger: false,
-  hovered: false,
 };
 
-export default class ControlHeader extends React.Component {
-  renderOptionalIcons() {
-    if (this.props.hovered) {
-      return (
-        <span>
-          {this.props.description &&
+export default function ControlHeader({
+    label, description, validationErrors, renderTrigger, leftNode, rightNode }) {
+  const hasError = (validationErrors.length > 0);
+  return (
+    <div>
+      <div className="pull-left">
+        <ControlLabel>
+          {hasError ?
+            <strong className="text-danger">{label}</strong> :
+            <span>{label}</span>
+          }
+          {' '}
+          {(validationErrors.length > 0) &&
             <span>
-              <InfoTooltipWithTrigger
-                label="descr"
-                tooltip={this.props.description}
-                placement="top"
-              />
+              <OverlayTrigger
+                placement="right"
+                overlay={
+                  <Tooltip id={'error-tooltip'}>
+                    {validationErrors.join(' ')}
+                  </Tooltip>
+                }
+              >
+                <i className="fa fa-exclamation-circle text-danger" />
+              </OverlayTrigger>
               {' '}
             </span>
           }
-          {this.props.renderTrigger &&
+          {description &&
             <span>
-              <InfoTooltipWithTrigger
-                label="bolt"
-                tooltip={this.props.description}
-                placement="top"
-                icon="bolt"
-              />
+              <InfoTooltipWithTrigger label={label} tooltip={description} />
               {' '}
             </span>
           }
-        </span>);
-    }
-    return null;
-  }
-  render() {
-    const labelClass = (this.props.validationErrors.length > 0) ? 'text-danger' : '';
-    return (
-      <div
-        className="ControlHeader"
-      >
-        <div className="pull-left">
-          <ControlLabel>
-            {this.props.leftNode &&
-              <span>{this.props.leftNode}</span>
-            }
-            <span
-              onClick={this.props.onClick}
-              className={labelClass}
-              style={{ cursor: this.props.onClick ? 'pointer' : '' }}
-            >
-              {this.props.label}
+          {renderTrigger &&
+            <span>
+              <OverlayTrigger
+                placement="right"
+                overlay={
+                  <Tooltip id={'rendertrigger-tooltip'}>
+                    Takes effect on chart immediatly
+                  </Tooltip>
+                }
+              >
+                <i className="fa fa-bolt text-muted" />
+              </OverlayTrigger>
+              {' '}
             </span>
-            {' '}
-            {(this.props.validationErrors.length > 0) &&
-              <span>
-                <OverlayTrigger
-                  placement="top"
-                  overlay={
-                    <Tooltip id={'error-tooltip'}>
-                      {this.props.validationErrors.join(' ')}
-                    </Tooltip>
-                  }
-                >
-                  <i className="fa fa-exclamation-circle text-danger" />
-                </OverlayTrigger>
-                {' '}
-              </span>
-            }
-            {this.renderOptionalIcons()}
-          </ControlLabel>
-        </div>
-        {this.props.rightNode &&
-          <div className="pull-right">
-            {this.props.rightNode}
-          </div>
-        }
-        <div className="clearfix" />
+          }
+          {leftNode &&
+            <span>{leftNode}</span>
+          }
+        </ControlLabel>
       </div>
-    );
-  }
+      {rightNode &&
+        <div className="pull-right">
+          {rightNode}
+        </div>
+      }
+      <div className="clearfix" />
+    </div>
+  );
 }
 
 ControlHeader.propTypes = propTypes;

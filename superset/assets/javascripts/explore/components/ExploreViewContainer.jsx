@@ -8,15 +8,12 @@ import ControlPanelsContainer from './ControlPanelsContainer';
 import SaveModal from './SaveModal';
 import QueryAndSaveBtns from './QueryAndSaveBtns';
 import { getExploreUrl } from '../exploreUtils';
+import * as actions from '../actions/exploreActions';
 import { getFormDataFromControls } from '../stores/store';
-import * as exploreActions from '../actions/exploreActions';
-import * as saveModalActions from '../actions/saveModalActions';
-import * as chartActions from '../actions/chartActions';
 
 const propTypes = {
   actions: PropTypes.object.isRequired,
   datasource_type: PropTypes.string.isRequired,
-  isDatasourceMetaLoading: PropTypes.bool.isRequired,
   chartStatus: PropTypes.string,
   controls: PropTypes.object.isRequired,
   forcedHeight: PropTypes.string,
@@ -31,12 +28,14 @@ class ExploreViewContainer extends React.Component {
     super(props);
     this.state = {
       height: this.getHeight(),
-      width: this.getWidth(),
       showModal: false,
     };
   }
 
   componentDidMount() {
+    if (!this.props.standalone) {
+      this.props.actions.fetchDatasources();
+    }
     window.addEventListener('resize', this.handleResize.bind(this));
     this.triggerQueryIfNeeded();
   }
@@ -76,10 +75,6 @@ class ExploreViewContainer extends React.Component {
     this.props.actions.chartUpdateStopped(this.props.queryRequest);
   }
 
-  getWidth() {
-    return `${window.innerWidth}px`;
-  }
-
   getHeight() {
     if (this.props.forcedHeight) {
       return this.props.forcedHeight + 'px';
@@ -87,6 +82,7 @@ class ExploreViewContainer extends React.Component {
     const navHeight = this.props.standalone ? 0 : 90;
     return `${window.innerHeight - navHeight}px`;
   }
+
 
   triggerQueryIfNeeded() {
     if (this.props.triggerQuery && !this.hasErrors()) {
@@ -97,7 +93,7 @@ class ExploreViewContainer extends React.Component {
   handleResize() {
     clearTimeout(this.resizeTimer);
     this.resizeTimer = setTimeout(() => {
-      this.setState({ height: this.getHeight(), width: this.getWidth() });
+      this.setState({ height: this.getHeight() });
     }, 250);
   }
 
@@ -135,7 +131,6 @@ class ExploreViewContainer extends React.Component {
     return (
       <ChartContainer
         actions={this.props.actions}
-        width={this.state.width}
         height={this.state.height}
       />);
   }
@@ -174,9 +169,7 @@ class ExploreViewContainer extends React.Component {
             <ControlPanelsContainer
               actions={this.props.actions}
               form_data={this.props.form_data}
-              controls={this.props.controls}
               datasource_type={this.props.datasource_type}
-              isDatasourceMetaLoading={this.props.isDatasourceMetaLoading}
             />
           </div>
           <div className="col-sm-8">
@@ -190,23 +183,21 @@ class ExploreViewContainer extends React.Component {
 
 ExploreViewContainer.propTypes = propTypes;
 
-function mapStateToProps({ explore, chart }) {
-  const form_data = getFormDataFromControls(explore.controls);
+function mapStateToProps(state) {
+  const form_data = getFormDataFromControls(state.controls);
   return {
-    isDatasourceMetaLoading: explore.isDatasourceMetaLoading,
-    datasource_type: explore.datasource.type,
-    controls: explore.controls,
+    chartStatus: state.chartStatus,
+    datasource_type: state.datasource_type,
+    controls: state.controls,
     form_data,
-    standalone: explore.standalone,
-    triggerQuery: explore.triggerQuery,
-    forcedHeight: explore.forced_height,
-    queryRequest: chart.queryRequest,
-    chartStatus: chart.chartStatus,
+    standalone: state.standalone,
+    triggerQuery: state.triggerQuery,
+    forcedHeight: state.forced_height,
+    queryRequest: state.queryRequest,
   };
 }
 
 function mapDispatchToProps(dispatch) {
-  const actions = Object.assign({}, exploreActions, saveModalActions, chartActions);
   return {
     actions: bindActionCreators(actions, dispatch),
   };
