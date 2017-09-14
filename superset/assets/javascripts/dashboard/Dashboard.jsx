@@ -11,20 +11,14 @@ import AlertsWrapper from '../components/AlertsWrapper';
 
 import '../../stylesheets/dashboard.css';
 
-const superset = require('../modules/superset');
+const px = require('../modules/superset');
 const urlLib = require('url');
 const utils = require('../modules/utils');
-
-let px;
 
 appSetup();
 
 export function getInitialState(boostrapData) {
-  const dashboard = Object.assign(
-    {},
-    utils.controllerInterface,
-    boostrapData.dashboard_data,
-    { common: boostrapData.common });
+  const dashboard = Object.assign({}, utils.controllerInterface, boostrapData.dashboard_data);
   dashboard.firstLoad = true;
 
   dashboard.posDict = {};
@@ -68,7 +62,7 @@ function renderAlert() {
 function initDashboardView(dashboard) {
   render(
     <div>
-      <AlertsWrapper initMessages={dashboard.common.flash_messages} />
+      <AlertsWrapper />
       <Header dashboard={dashboard} />
     </div>,
     document.getElementById('dashboard-header'),
@@ -188,10 +182,6 @@ export function dashboardContainer(dashboard, datasources, userid) {
         immuneToFields = this.metadata.filter_immune_slice_fields[sliceId];
       }
       for (const filteringSliceId in this.filters) {
-        if (filteringSliceId === sliceId.toString()) {
-          // Filters applied by the slice don't apply to itself
-          continue;
-        }
         for (const field in this.filters[filteringSliceId]) {
           if (!immuneToFields.includes(field)) {
             f.push({
@@ -205,24 +195,21 @@ export function dashboardContainer(dashboard, datasources, userid) {
       return f;
     },
     addFilter(sliceId, col, vals, merge = true, refresh = true) {
-      if (this.getSlice(sliceId) && (col === '__from' || col === '__to' ||
-          this.getSlice(sliceId).formData.groupby.indexOf(col) !== -1)) {
-        if (!(sliceId in this.filters)) {
-          this.filters[sliceId] = {};
-        }
-        if (!(col in this.filters[sliceId]) || !merge) {
-          this.filters[sliceId][col] = vals;
+      if (!(sliceId in this.filters)) {
+        this.filters[sliceId] = {};
+      }
+      if (!(col in this.filters[sliceId]) || !merge) {
+        this.filters[sliceId][col] = vals;
 
-          // d3.merge pass in array of arrays while some value form filter components
-          // from and to filter box require string to be process and return
-        } else if (this.filters[sliceId][col] instanceof Array) {
-          this.filters[sliceId][col] = d3.merge([this.filters[sliceId][col], vals]);
-        } else {
-          this.filters[sliceId][col] = d3.merge([[this.filters[sliceId][col]], vals])[0] || '';
-        }
-        if (refresh) {
-          this.refreshExcept(sliceId);
-        }
+        // d3.merge pass in array of arrays while some value form filter components
+        // from and to filter box require string to be process and return
+      } else if (this.filters[sliceId][col] instanceof Array) {
+        this.filters[sliceId][col] = d3.merge([this.filters[sliceId][col], vals]);
+      } else {
+        this.filters[sliceId][col] = d3.merge([[this.filters[sliceId][col]], vals])[0] || '';
+      }
+      if (refresh) {
+        this.refreshExcept(sliceId);
       }
       this.updateFilterParamsInUrl();
     },
@@ -258,18 +245,15 @@ export function dashboardContainer(dashboard, datasources, userid) {
     startPeriodicRender(interval) {
       this.stopPeriodicRender();
       const dash = this;
-      const immune = this.metadata.timed_refresh_immune_slices || [];
       const maxRandomDelay = Math.max(interval * 0.2, 5000);
       const refreshAll = () => {
         dash.sliceObjects.forEach((slice) => {
           const force = !dash.firstLoad;
-          if (immune.indexOf(slice.data.slice_id) === -1) {
-            setTimeout(() => {
-              slice.render(force);
-            },
-            // Randomize to prevent all widgets refreshing at the same time
-            maxRandomDelay * Math.random());
-          }
+          setTimeout(() => {
+            slice.render(force);
+          },
+          // Randomize to prevent all widgets refreshing at the same time
+          maxRandomDelay * Math.random());
         });
         dash.firstLoad = false;
       };
@@ -370,7 +354,6 @@ $(document).ready(() => {
   const dashboardData = $('.dashboard').data('bootstrap');
 
   const state = getInitialState(dashboardData);
-  px = superset(state);
   const dashboard = dashboardContainer(state.dashboard, state.datasources, state.user_id);
   initDashboardView(dashboard);
   dashboard.init();

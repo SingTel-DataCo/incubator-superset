@@ -28,9 +28,7 @@ describe('HighlightedSql', () => {
     const pre = wrapper.find('pre');
     expect(pre).to.have.length(1);
     pre.simulate('click');
-    setTimeout(() => {
-      const modalBody = mount(wrapper.state().modalBody);
-      expect(modalBody.find(SyntaxHighlighter)).to.have.length(2);
-    }, 10);
+    const modalBody = mount(wrapper.state().modalBody);
+    expect(modalBody.find(SyntaxHighlighter)).to.have.length(2);
   });
 });

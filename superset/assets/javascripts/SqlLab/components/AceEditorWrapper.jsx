@@ -32,7 +32,6 @@ const propTypes = {
   sql: PropTypes.string.isRequired,
   tables: PropTypes.array,
   queryEditor: PropTypes.object.isRequired,
-  height: PropTypes.string,
 };
 
 const defaultProps = {
@@ -46,7 +45,6 @@ class AceEditorWrapper extends React.PureComponent {
     super(props);
     this.state = {
       sql: props.sql,
-      selectedText: '',
     };
   }
   componentDidMount() {
@@ -79,13 +77,8 @@ class AceEditorWrapper extends React.PureComponent {
     });
     editor.$blockScrolling = Infinity; // eslint-disable-line no-param-reassign
     editor.selection.on('changeSelection', () => {
-      const selectedText = editor.getSelectedText();
-      // Backspace trigger 1 character selection, ignoring
-      if (selectedText !== this.state.selectedText && selectedText.length !== 1) {
-        this.setState({ selectedText });
-        this.props.actions.queryEditorSetSelectedText(
-          this.props.queryEditor, selectedText);
-      }
+      this.props.actions.queryEditorSetSelectedText(
+        this.props.queryEditor, editor.getSelectedText());
     });
   }
   getCompletions(aceEditor, session, pos, prefix, callback) {
@@ -126,7 +119,8 @@ class AceEditorWrapper extends React.PureComponent {
         theme="github"
         onLoad={this.onEditorLoad.bind(this)}
         onBlur={this.onBlur.bind(this)}
-        height={this.props.height}
+        minLines={12}
+        maxLines={12}
         onChange={this.textChange.bind(this)}
         width="100%"
         editorProps={{ $blockScrolling: true }}

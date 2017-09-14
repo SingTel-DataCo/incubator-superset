@@ -29,10 +29,13 @@ const defaultProps = {
 export default class TextControl extends React.Component {
   constructor(props) {
     super(props);
+    const value = props.value ? props.value.toString() : '';
+    this.state = { value };
     this.onChange = this.onChange.bind(this);
   }
   onChange(event) {
     let value = event.target.value || '';
+    this.setState({ value });
 
     // Validation & casting
     const errors = [];
@@ -55,7 +58,6 @@ export default class TextControl extends React.Component {
     this.props.onChange(value, errors);
   }
   render() {
-    const value = this.props.value ? this.props.value.toString() : '';
     return (
       <div>
         <ControlHeader {...this.props} />
@@ -64,7 +66,7 @@ export default class TextControl extends React.Component {
             type="text"
             placeholder=""
             onChange={this.onChange}
-            value={value}
+            value={this.state.value}
           />
         </FormGroup>
       </div>

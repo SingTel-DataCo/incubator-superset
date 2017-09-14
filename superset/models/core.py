@@ -86,7 +86,8 @@ class CssTemplate(Model, AuditMixinNullable):
 slice_user = Table('slice_user', metadata,
                    Column('id', Integer, primary_key=True),
                    Column('user_id', Integer, ForeignKey('ab_user.id')),
-                   Column('slice_id', Integer, ForeignKey('slices.id')))
+                   Column('slice_id', Integer, ForeignKey('slices.id'))
+                   )
 
 
 class Slice(Model, AuditMixinNullable, ImportMixin):
@@ -119,17 +120,6 @@ class Slice(Model, AuditMixinNullable, ImportMixin):
     @property
     def datasource(self):
         return self.get_datasource
-
-    def clone(self):
-        return Slice(
-            slice_name=self.slice_name,
-            datasource_id=self.datasource_id,
-            datasource_type=self.datasource_type,
-            datasource_name=self.datasource_name,
-            viz_type=self.viz_type,
-            params=self.params,
-            description=self.description,
-            cache_timeout=self.cache_timeout)
 
     @datasource.getter
     @utils.memoized
@@ -332,14 +322,6 @@ class Dashboard(Model, AuditMixinNullable, ImportMixin):
 
     @property
     def url(self):
-        if self.json_metadata:
-            # add default_filters to the preselect_filters of dashboard
-            json_metadata = json.loads(self.json_metadata)
-            default_filters = json_metadata.get('default_filters')
-            if default_filters:
-                filters = parse.quote(default_filters.encode('utf8'))
-                return "/superset/dashboard/{}/?preselect_filters={}".format(
-                    self.slug or self.id, filters)
         return "/superset/dashboard/{}/".format(self.slug or self.id)
 
     @property
@@ -429,7 +411,6 @@ class Dashboard(Model, AuditMixinNullable, ImportMixin):
         slices = copy(dashboard_to_import.slices)
         old_to_new_slc_id_dict = {}
         new_filter_immune_slices = []
-        new_timed_refresh_immune_slices = []
         new_expanded_slices = {}
         i_params_dict = dashboard_to_import.params_dict
         for slc in slices:
@@ -443,10 +424,6 @@ class Dashboard(Model, AuditMixinNullable, ImportMixin):
             if ('filter_immune_slices' in i_params_dict and
                     old_slc_id_str in i_params_dict['filter_immune_slices']):
                 new_filter_immune_slices.append(new_slc_id_str)
-            if ('timed_refresh_immune_slices' in i_params_dict and
-                    old_slc_id_str in
-                    i_params_dict['timed_refresh_immune_slices']):
-                new_timed_refresh_immune_slices.append(new_slc_id_str)
             if ('expanded_slices' in i_params_dict and
                     old_slc_id_str in i_params_dict['expanded_slices']):
                 new_expanded_slices[new_slc_id_str] = (
@@ -469,9 +446,6 @@ class Dashboard(Model, AuditMixinNullable, ImportMixin):
         if new_filter_immune_slices:
             dashboard_to_import.alter_params(
                 filter_immune_slices=new_filter_immune_slices)
-        if new_timed_refresh_immune_slices:
-            dashboard_to_import.alter_params(
-                timed_refresh_immune_slices=new_timed_refresh_immune_slices)
 
         new_slices = session.query(Slice).filter(
             Slice.id.in_(old_to_new_slc_id_dict.values())).all()
@@ -771,14 +745,11 @@ class Log(Model):
             post_data = request.form or {}
             d.update(post_data)
             d.update(kwargs)
-            slice_id = d.get('slice_id')
-
+            slice_id = d.get('slice_id', 0)
             try:
-                slice_id = int(
-                    slice_id or json.loads(d.get('form_data')).get('slice_id'))
-            except (ValueError, TypeError):
+                slice_id = int(slice_id) if slice_id else 0
+            except ValueError:
                 slice_id = 0
-
             params = ""
             try:
                 params = json.dumps(d)
@@ -786,11 +757,12 @@ class Log(Model):
                 pass
             stats_logger.incr(f.__name__)
             value = f(*args, **kwargs)
+
             sesh = db.session()
             log = cls(
                 action=f.__name__,
                 json=params,
-                dashboard_id=d.get('dashboard_id'),
+                dashboard_id=d.get('dashboard_id') or None,
                 slice_id=slice_id,
                 duration_ms=(
                     datetime.now() - start_dttm).total_seconds() * 1000,

@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Checkbox } from 'react-bootstrap';
 import ControlHeader from '../ControlHeader';
-import Checkbox from '../../../components/Checkbox';
 
 const propTypes = {
   name: PropTypes.string.isRequired,
@@ -16,10 +16,8 @@ const defaultProps = {
   onChange: () => {},
 };
 
-const checkboxStyle = { paddingRight: '5px' };
-
 export default class CheckboxControl extends React.Component {
-  onChange() {
+  onToggle() {
     this.props.onChange(!this.props.value);
   }
   render() {
@@ -28,9 +26,8 @@ export default class CheckboxControl extends React.Component {
         {...this.props}
         leftNode={
           <Checkbox
-            onChange={this.onChange.bind(this)}
-            style={checkboxStyle}
-            checked={!!this.props.value}
+            checked={this.props.value}
+            onChange={this.onToggle.bind(this)}
           />
         }
       />

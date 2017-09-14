@@ -25,10 +25,7 @@ global.notify = {
 describe('VisualizeModal', () => {
   const middlewares = [thunk];
   const mockStore = configureStore(middlewares);
-  const initialState = sqlLabReducer({}, {});
-  initialState.common = {
-    SUPERSET_WEBSERVER_TIMEOUT: 45,
-  };
+  const initialState = sqlLabReducer(undefined, {});
   const store = mockStore(initialState);
   const mockedProps = {
     show: true,

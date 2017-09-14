@@ -18,7 +18,6 @@ const propTypes = {
   dataPreviewQueries: PropTypes.array.isRequired,
   actions: PropTypes.object.isRequired,
   activeSouthPaneTab: PropTypes.string,
-  height: PropTypes.number,
 };
 
 const defaultProps = {
@@ -26,11 +25,40 @@ const defaultProps = {
 };
 
 class SouthPane extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      innerTabHeight: this.getInnerTabHeight(),
+    };
+  }
+  getInnerTabHeight() {
+    // hack to get height the tab container so it can be fixed and scroll in place
+    // calculate inner tab height
+
+    // document.getElementById('brace-editor').getBoundingClientRect().height;
+    const sqlEditorHeight = 192;
+
+    // document.getElementById('js-sql-toolbar').getBoundingClientRect().height;
+    const sqlToolbar = 30;
+
+    // document.getElementsByClassName('nav-tabs')[0].getBoundingClientRect().height * 2;
+    const tabsHeight = 88;
+
+    // document.getElementsByTagName('header')[0].getBoundingClientRect().height;
+    const headerHeight = 59;
+
+    const sum =
+      sqlEditorHeight +
+      sqlToolbar +
+      tabsHeight +
+      headerHeight;
+
+    return window.innerHeight - sum - 95;
+  }
   switchTab(id) {
     this.props.actions.setActiveSouthPaneTab(id);
   }
   render() {
-    const innerTabHeight = this.props.height - 55;
     let latestQuery;
     const props = this.props;
     if (props.editorQueries.length > 0) {
@@ -44,7 +72,7 @@ class SouthPane extends React.PureComponent {
           search
           query={latestQuery}
           actions={props.actions}
-          height={innerTabHeight}
+          height={this.state.innerTabHeight}
         />
       );
     } else {
@@ -63,7 +91,7 @@ class SouthPane extends React.PureComponent {
           csv={false}
           actions={props.actions}
           cache
-          height={innerTabHeight}
+          height={this.state.innerTabHeight}
         />
       </Tab>
     ));
@@ -86,7 +114,7 @@ class SouthPane extends React.PureComponent {
             title="Query History"
             eventKey="History"
           >
-            <div style={{ height: `${innerTabHeight}px`, overflow: 'scroll' }}>
+            <div style={{ height: `${this.state.innerTabHeight}px`, overflow: 'scroll' }}>
               <QueryHistory queries={props.editorQueries} actions={props.actions} />
             </div>
           </Tab>

@@ -4,13 +4,13 @@ import Mustache from 'mustache';
 import vizMap from '../../visualizations/main';
 import { getExploreUrl } from '../explore/exploreUtils';
 import { applyDefaultFormData } from '../explore/stores/store';
+import { QUERY_TIMEOUT_THRESHOLD } from '../constants';
 
 const utils = require('./utils');
 
-/* eslint wrap-iife: 0 */
-const px = function (state) {
+/* eslint wrap-iife: 0*/
+const px = function () {
   let slice;
-  const timeout = state.common.conf.SUPERSET_WEBSERVER_TIMEOUT;
   function getParam(name) {
     /* eslint no-useless-escape: 0 */
     const formattedName = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
@@ -157,10 +157,8 @@ const px = function (state) {
         }
         if (xhr) {
           if (xhr.statusText === 'timeout') {
-            errHtml += (
-              '<div class="alert alert-warning">' +
-              'Query timeout - visualization query are set to time out ' +
-              `at ${timeout} seconds.</div>`);
+            errHtml += '<div class="alert alert-warning">' +
+              `Query timeout - visualization query are set to time out at ${QUERY_TIMEOUT_THRESHOLD / 1000} seconds.</div>`;
           } else {
             const extendedMsg = this.getErrorMsg(xhr);
             if (extendedMsg) {
@@ -212,7 +210,7 @@ const px = function (state) {
         container.css('height', this.height());
         $.ajax({
           url: this.jsonEndpoint(),
-          timeout: timeout * 1000,
+          timeout: QUERY_TIMEOUT_THRESHOLD,
           success: (queryResponse) => {
             try {
               vizMap[formData.viz_type](this, queryResponse);
@@ -253,5 +251,5 @@ const px = function (state) {
     initFavStars,
     Slice,
   };
-};
+}();
 module.exports = px;

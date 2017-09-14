@@ -1,43 +1,43 @@
-.treemap text {
+text {
   pointer-events: none;
 }
 
-.treemap .grandparent text {
+.grandparent text {
   font-weight: bold;
 }
 
-.treemap rect {
+rect {
   fill: none;
   stroke: #fff;
 }
 
-.treemap rect.parent,
-.treemap .grandparent rect {
+rect.parent,
+.grandparent rect {
   stroke-width: 2px;
 }
 
-.treemap rect.parent {
+rect.parent {
     pointer-events: none;
 }
 
-.treemap .grandparent rect {
+.grandparent rect {
   fill: #eee;
 }
 
-.treemap .grandparent:hover rect {
+.grandparent:hover rect {
   fill: #aaa;
 }
 
-.treemap .children rect.parent,
-.treemap .grandparent rect {
+.children rect.parent,
+.grandparent rect {
   cursor: pointer;
 }
 
-.treemap .children rect.parent {
+.children rect.parent {
   fill: #bbb;
   fill-opacity: .5;
 }
 
-.treemap .children:hover rect.child {
+.children:hover rect.child {
   fill: #bbb;
 }

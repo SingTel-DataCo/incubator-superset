@@ -27,7 +27,7 @@ const defaultProps = {
   cache: false,
 };
 
-const SEARCH_HEIGHT = 46;
+const RESULT_SET_CONTROLS_HEIGHT = 46;
 
 export default class ResultSet extends React.PureComponent {
   constructor(props) {
@@ -35,7 +35,8 @@ export default class ResultSet extends React.PureComponent {
     this.state = {
       searchText: '',
       showModal: false,
-      data: null,
+      data: [],
+      height: props.search ? props.height - RESULT_SET_CONTROLS_HEIGHT : props.height,
     };
   }
   componentDidMount() {
@@ -143,15 +144,32 @@ export default class ResultSet extends React.PureComponent {
   }
   render() {
     const query = this.props.query;
-    const height = this.props.search ? this.props.height - SEARCH_HEIGHT : this.props.height;
     let sql;
+
+    if (query.state === 'stopped') {
+      return <Alert bsStyle="warning">Query was stopped</Alert>;
+    }
 
     if (this.props.showSql) {
       sql = <HighlightedSql sql={query.sql} />;
     }
-
-    if (query.state === 'stopped') {
-      return <Alert bsStyle="warning">Query was stopped</Alert>;
+    if (['running', 'pending', 'fetching'].indexOf(query.state) > -1) {
+      let progressBar;
+      if (query.progress > 0 && query.state === 'running') {
+        progressBar = (
+          <ProgressBar
+            striped
+            now={query.progress}
+            label={`${query.progress}%`}
+          />);
+      }
+      return (
+        <div>
+          <img className="loading" alt="Loading..." src="/static/assets/images/loading.gif" />
+          <QueryStateLabel query={query} />
+          {progressBar}
+        </div>
+      );
     } else if (query.state === 'failed') {
       return <Alert bsStyle="danger">{query.errorMessage}</Alert>;
     } else if (query.state === 'success' && query.ctas) {
@@ -174,10 +192,10 @@ export default class ResultSet extends React.PureComponent {
       let data;
       if (this.props.cache && query.cached) {
         data = this.state.data;
-      } else if (results && results.data) {
-        data = results.data;
+      } else {
+        data = results ? results.data : [];
       }
-      if (data && data.length > 0) {
+      if (results && data.length > 0) {
         return (
           <div>
             <VisualizeModal
@@ -190,13 +208,11 @@ export default class ResultSet extends React.PureComponent {
             <FilterableTable
               data={data}
               orderedColumnKeys={results.columns.map(col => col.name)}
-              height={height}
+              height={this.state.height}
               filterText={this.state.searchText}
             />
           </div>
         );
-      } else if (data && data.length === 0) {
-        return <Alert bsStyle="warning">The query returned no data</Alert>;
       }
     }
     if (query.cached) {
@@ -210,36 +226,7 @@ export default class ResultSet extends React.PureComponent {
         </Button>
       );
     }
-    let progressBar;
-    let trackingUrl;
-    if (query.progress > 0 && query.state === 'running') {
-      progressBar = (
-        <ProgressBar
-          striped
-          now={query.progress}
-          label={`${query.progress}%`}
-        />);
-    }
-    if (query.trackingUrl) {
-      trackingUrl = (
-        <Button
-          bsSize="small"
-          onClick={() => { window.open(query.trackingUrl); }}
-        >
-            Track Job
-        </Button>
-      );
-    }
-    return (
-      <div>
-        <img className="loading" alt="Loading..." src="/static/assets/images/loading.gif" />
-        <QueryStateLabel query={query} />
-        {progressBar}
-        <div>
-          {trackingUrl}
-        </div>
-      </div>
-    );
+    return <Alert bsStyle="warning">The query returned no data</Alert>;
   }
 }
 ResultSet.propTypes = propTypes;

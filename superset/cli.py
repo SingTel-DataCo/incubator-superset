@@ -192,10 +192,10 @@ def worker(workers):
         celery_app.conf.update(CELERYD_CONCURRENCY=workers)
     elif config.get("SUPERSET_CELERY_WORKERS"):
         celery_app.conf.update(
-            CELERYD_CONCURRENCY=config.get("SUPERSET_CELERY_WORKERS"))
+            worker_concurrency=config.get("SUPERSET_CELERY_WORKERS"))
 
-    worker = celery_app.Worker(optimization='fair')
-    worker.start()
+    worker = celery_worker.worker(app=celery_app)
+    worker.run()
 
 
 @manager.option(

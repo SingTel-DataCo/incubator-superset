@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Button, FormGroup, FormControl } from 'react-bootstrap';
-
 import AceEditor from 'react-ace';
 import 'brace/mode/sql';
 import 'brace/mode/json';
@@ -77,7 +76,7 @@ export default class TextAreaControl extends React.Component {
           modalTitle={controlHeader}
           triggerNode={
             <Button bsSize="small" className="m-t-5">
-              Edit <strong>{this.props.language}</strong> in modal
+              Edit <b>{this.props.language}</b> in modal
             </Button>
           }
           modalBody={this.renderEditor(true)}

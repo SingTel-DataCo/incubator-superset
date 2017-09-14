@@ -3,9 +3,8 @@ import json
 import logging
 import traceback
 
-from flask import g, redirect, Response, flash, abort, get_flashed_messages
+from flask import g, redirect, Response, flash, abort
 from flask_babel import gettext as __
-from flask_babel import lazy_gettext as _
 
 from flask_appbuilder import BaseView
 from flask_appbuilder import ModelView
@@ -16,8 +15,6 @@ from flask_appbuilder.models.sqla.filters import BaseFilter
 from superset import appbuilder, conf, db, utils, sm, sql_parse
 from superset.connectors.connector_registry import ConnectorRegistry
 from superset.connectors.sqla.models import SqlaTable
-
-FRONTEND_CONF_KEYS = ('SUPERSET_WEBSERVER_TIMEOUT',)
 
 
 def get_error_msg():
@@ -31,13 +28,13 @@ def get_error_msg():
     return error_msg
 
 
-def json_error_response(msg=None, status=500, stacktrace=None, payload=None):
-    if not payload:
-        payload = {'error': str(msg)}
-        if stacktrace:
-            payload['stacktrace'] = stacktrace
+def json_error_response(msg, status=None, stacktrace=None):
+    data = {'error': str(msg)}
+    if stacktrace:
+        data['stacktrace'] = stacktrace
+    status = status if status else 500
     return Response(
-        json.dumps(payload, default=utils.json_iso_dttm_ser),
+        json.dumps(data),
         status=status, mimetype="application/json")
 
 
@@ -188,14 +185,6 @@ class BaseSupersetView(BaseView):
             full_names = {d.full_name for d in user_datasources}
             return [d for d in datasource_names if d in full_names]
 
-    def common_bootsrap_payload(self):
-        """Common data always sent to the client"""
-        messages = get_flashed_messages(with_categories=True)
-        return {
-            'flash_messages': messages,
-            'conf': {k: conf.get(k) for k in FRONTEND_CONF_KEYS},
-        }
-
 
 class SupersetModelView(ModelView):
     page_size = 100
@@ -213,7 +202,7 @@ def validate_json(form, field):  # noqa
         json.loads(field.data)
     except Exception as e:
         logging.exception(e)
-        raise Exception(_("json isn't valid"))
+        raise Exception("json isn't valid")
 
 
 class DeleteMixin(object):
