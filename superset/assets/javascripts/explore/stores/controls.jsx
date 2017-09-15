@@ -328,6 +328,7 @@ export const controls = {
     default: 'France',
     choices: [
       'Australia_State',
+      'Australia_GCC',
       'Australia_SA4',
       'Australia_SA3',
       'Australia_SA2',
