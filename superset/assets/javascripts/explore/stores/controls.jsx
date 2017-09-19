@@ -289,6 +289,7 @@ export const controls = {
       'Australia_SA3',
       'Australia_SA2',
       'Australia_SA1',
+      'Australia_GCC',
       'Belgium',
       'Brazil',
       'China',
