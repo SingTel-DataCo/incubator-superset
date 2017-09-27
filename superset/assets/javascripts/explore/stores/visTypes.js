@@ -1040,6 +1040,57 @@ export const visTypes = {
       },
     },
   },
+  
+  mapbox_with_polygon: {
+	    label: 'Mapbox with Polygon',
+	    controlPanelSections: [
+	      {
+            label: 'Query',
+            expanded: true,
+            controlSetRows: [
+              ['entity'],
+              ['metric'],
+            ],
+          },
+          {
+              label: 'Options',
+              controlSetRows: [
+                ['select_country'],
+                ['linear_color_scheme'],
+              ],
+          },
+	      {
+	        label: 'Visual Tweaks',
+	        controlSetRows: [
+	          ['render_while_dragging'],
+	          ['mapbox_style'],
+	          ['global_opacity'],
+	          ['mapbox_color'],
+	        ],
+	      },
+	      {
+	        label: 'Viewport',
+	        controlSetRows: [
+	          ['viewport_longitude'],
+	          ['viewport_latitude'],
+	          ['viewport_zoom'],
+	        ],
+	      },
+	    ],
+	    controlOverrides: {
+    	entity: {
+            label: 'Codes of region/province/department',
+            description: "It's the code of your region/province/department in your table. (see documentation for list of ISO 3166-1)",
+          },
+          metric: {
+            label: 'Metric',
+            description: 'Metric to display bottom title',
+          },
+          linear_color_scheme: {
+            renderTrigger: false,
+          },
+	    },
+	  },
 
   event_flow: {
     label: 'Event flow',
