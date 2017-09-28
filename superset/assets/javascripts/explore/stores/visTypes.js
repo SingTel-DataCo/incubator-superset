@@ -1057,14 +1057,9 @@ export const visTypes = {
               controlSetRows: [
                 ['select_country'],
                 ['rgb_color_scheme'],
+                ['mapbox_style'],
               ],
           },
-	      {
-	        label: 'Visual Tweaks',
-	        controlSetRows: [
-	          ['mapbox_style'],
-	        ],
-	      },
 	      {
 	        label: 'Viewport',
 	        controlSetRows: [
@@ -1082,6 +1077,10 @@ export const visTypes = {
           metric: {
             label: 'Metric',
             description: 'Metric to display bottom title',
+          },
+          select_country: {
+              label: 'GeoJSON Layer',
+              description: 'The name of GeoJSON Layer that Superset should display',
           }
 	    },
 	  },
