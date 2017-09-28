@@ -1062,10 +1062,7 @@ export const visTypes = {
 	      {
 	        label: 'Visual Tweaks',
 	        controlSetRows: [
-	          ['render_while_dragging'],
 	          ['mapbox_style'],
-	          ['global_opacity'],
-	          ['mapbox_color'],
 	        ],
 	      },
 	      {

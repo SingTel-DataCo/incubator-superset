@@ -1647,14 +1647,11 @@ class MapboxWithPloygonViz(BaseViz):
             "dataResponse": d,
             "mapboxApiKey": config.get('MAPBOX_API_KEY'),
             "mapStyle": fd.get("mapbox_style"),
-            "globalOpacity": fd.get("global_opacity"),
             "viewportLongitude": fd.get("viewport_longitude"),
             "viewportLatitude": fd.get("viewport_latitude"),
             "viewportZoom": fd.get("viewport_zoom"),
-            "renderWhileDragging": fd.get("render_while_dragging"),
-            "tooltip": fd.get("rich_tooltip"),
-            "color": fd.get("mapbox_color"),
             "country": fd.get("select_country"),
+            "linear_color_scheme": fd.get("linear_color_scheme"),
         }
 
 class EventFlowViz(BaseViz):
