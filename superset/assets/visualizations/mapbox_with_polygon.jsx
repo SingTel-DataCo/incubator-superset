@@ -35,6 +35,7 @@ class MapboxViz extends React.Component {
       minCount: 0,
       maxCount: 0
     };
+    
     this.onViewportChange = this.onViewportChange.bind(this);
     this._onHover = this._onHover.bind(this);
     this._renderTooltip = this._renderTooltip.bind(this);
@@ -42,24 +43,32 @@ class MapboxViz extends React.Component {
   
   componentDidMount() {
       var country = this.props.country;
-      var linear_color_scheme = this.props.linear_color_scheme;
-      
-      console.log(linear_color_scheme);
-      
       requestJson('/static/assets/visualizations/countries/'+country+'.geojson', (error, response) => {
-        if (!error) {
-            var resp = this.props.dataResponse;
-            var data_map = [];
-            for (var i = 0; i < resp.length; i++) {
-                var key = resp[i].country_id;
-                data_map[key] = resp[i].metric;
-            }
+          if (!error) {
+              var resp = this.props.dataResponse;
+              var data_map = [];
+              for (var i = 0; i < resp.length; i++) {
+                  var key = resp[i].country_id;
+                  data_map[key] = resp[i].metric;
+              }
 
-            var maxCount = d3.max(d3.values(data_map));
-            var minCount = d3.min(d3.values(data_map));
-            this.setState({ geojson: response, dmap: data_map, maxCount: maxCount, minCount: minCount });           
-        }
-      });
+              var maxCount = d3.max(d3.values(data_map));
+              var minCount = d3.min(d3.values(data_map));
+              
+              const center = d3.geo.centroid(response);
+              var longitude = center[0];
+              var latitude = center[1];
+              
+              this.setState({ geojson: response, dmap: data_map, maxCount: maxCount, minCount: minCount, 
+                  viewport: {
+                      longitude,
+                      latitude,
+                      zoom: 5,
+                      startDragLngLat: [longitude, latitude],
+                    }
+              });           
+          }
+        });
     }
 
   onViewportChange(viewport) {
@@ -129,6 +138,8 @@ class MapboxViz extends React.Component {
             layers={[geosjsonLayer]}
             onWebGLInitialized={this.initialize}
             onLayerHover={this._onHover}
+            width={this.props.sliceWidth}
+            height={this.props.sliceHeight}
           />          
            {this._renderTooltip()}
         </MapGL>
