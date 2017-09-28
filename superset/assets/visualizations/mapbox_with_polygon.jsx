@@ -8,52 +8,16 @@ import MapGL from 'react-map-gl';
 import Immutable from 'immutable';
 import ViewportMercator from 'viewport-mercator-project';
 import {json as requestJson} from 'd3-request';
+import DeckGL, {GeoJsonLayer} from 'deck.gl';
 
-import {
-  kmToPixels,
-  rgbLuminance,
-  isNumeric,
-  MILES_PER_KM,
-  DEFAULT_LONGITUDE,
-  DEFAULT_LATITUDE,
-  DEFAULT_ZOOM,
-} from '../utils/common';
 import './mapbox_with_polygon.css';
 
 const NOOP = () => {};
 
-function buildStyle({fill = 'red', stroke = 'blue', dataResponse}) {
-    return Immutable.fromJS({
-      version: 8,
-      name: 'Selected GeoJson',
-      sources: {
-        'geojson-polygon-source': {
-          type: 'geojson',
-          data: dataResponse
-        }
-      },
-      layers: [
-        {
-          id: 'geojson-polygon-fill',
-          source: 'geojson-polygon-source',
-          type: 'fill',
-          paint: {'fill-color': fill, 'fill-opacity': 0.4},
-          interactive: true
-        }, {
-          id: 'geojson-polygon-stroke',
-          source: 'geojson-polygon-source',
-          type: 'line',
-          paint: {'line-color': stroke, 'line-width': 4},
-          interactive: false
-        }
-      ]
-    });
-  }
-
-
 class MapboxViz extends React.Component {
   constructor(props) {
     super(props);
+    console.log(props);
     const longitude = this.props.viewportLongitude || DEFAULT_LONGITUDE;
     const latitude = this.props.viewportLatitude || DEFAULT_LATITUDE;
 
@@ -64,36 +28,36 @@ class MapboxViz extends React.Component {
         zoom: this.props.viewportZoom || DEFAULT_ZOOM,
         startDragLngLat: [longitude, latitude],
       },
+      geojson: null,
+      dmap: null,
+      x_coord: 0, 
+      y_coord: 0, 
+      properties: null,
+      hoveredFeature: false
     };
     this.onViewportChange = this.onViewportChange.bind(this);
+    this._onHover = this._onHover.bind(this);
+    this._renderTooltip = this._renderTooltip.bind(this);
+
   }
   
   componentDidMount() {
       var country = this.props.country;
       requestJson('/static/assets/visualizations/countries/'+country+'.geojson', (error, response) => {
         if (!error) {
-            console.log(response);
-            this._loadGeoJson(response);
-            
-            this.state = {
-               mapStyle: buildStyle({stroke: '#FF00FF', fill: 'green', response})
-            };
+            var resp = this.props.dataResponse;
+            var data_map = [];
+            for (var i = 0; i < resp.length; i++) {
+                var key = resp[i].country_id;
+                data_map[key] = resp[i].metric;
+            }
+
+            console.log(data_map)
+            this.setState({ geojson: response, dmap: data_map });           
         }
       });
     }
 
-  _loadGeoJson(response) {
-      console.log(this.props.mapStyle);
-      const mapStyle = this.props.mapStyle;
-        // Add geojson source to map
-//        .setIn(['sources', 'incomeByState'], fromJS({type: 'geojson', data}))
-        // Add point layer to map
-//        .set('layers', defaultMapStyle.get('layers').push(dataLayer));
-
-//      this.setState({data, mapStyle});
-     // console.log(this.props.mapStyle);
-    };
-  
   onViewportChange(viewport) {
     this.setState({ viewport });
     this.props.setControlValue('viewport_longitude', viewport.longitude);
@@ -101,29 +65,78 @@ class MapboxViz extends React.Component {
     this.props.setControlValue('viewport_zoom', viewport.zoom);
   }
 
+  initialize(gl) {
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE, gl.ONE_MINUS_DST_ALPHA, gl.ONE);
+    gl.blendEquation(gl.FUNC_ADD);
+  }
+
+
+  _onHover(event) {
+    
+    var hoveredFeature = false;
+    var properties = event.object.properties;
+    var x_coord = event.x;
+    var y_coord = event.y; 
+    hoveredFeature = true;
+    this.setState({x_coord,y_coord,properties,hoveredFeature });
+    console.log("Hovered");
+    console.log(event);
+  }
+
+  _renderTooltip() {
+    const {hoveredFeature, properties, x_coord, y_coord, dmap} = this.state;
+    console.log("hoveredFeature");
+    console.log(hoveredFeature);
+    return hoveredFeature && (
+      <div className="tooltip" style={{left: x_coord, top: y_coord}}>
+        <div>ID: {properties.ISO}</div>
+        <div>Region: {properties.NAME_2}</div>
+        <div>Count: {dmap[properties.ISO]}</div>
+      </div>
+    );
+  }
+
+
+
   render() {
-    const mercator = ViewportMercator({
-      width: this.props.sliceWidth,
-      height: this.props.sliceHeight,
-      longitude: this.state.viewport.longitude,
-      latitude: this.state.viewport.latitude,
-      zoom: this.state.viewport.zoom,
+
+    const { geojson, dmap} = this.state;
+
+    const colorScale = r => [r * 255, 200 * (1 - r),50];
+    var maxCount = d3.max(d3.values(dmap));
+    var minCount = d3.min(d3.values(dmap));
+
+    const geosjsonLayer = new GeoJsonLayer({
+      id: 'geojson-layer',
+      data: geojson,
+      opacity: 0.3,
+      filled: true,
+      stroked: true,
+      lineWidthMinPixels: 1,
+      lineWidthScale: 2,
+      getFillColor: f => colorScale((dmap[f.properties.ISO] - minCount)/(maxCount-minCount)),      
+      pickable: true      
     });
-    const topLeft = mercator.unproject([0, 0]);
-    const bottomRight = mercator.unproject([this.props.sliceWidth, this.props.sliceHeight]);
-    const bbox = [topLeft[0], bottomRight[1], bottomRight[0], topLeft[1]];
-    const isDragging = this.state.viewport.isDragging === undefined ? false :
-                       this.state.viewport.isDragging;
-    return (
-      <MapGL
-        {...this.state.viewport}
-        mapStyle={this.props.mapStyle}
-        width={this.props.sliceWidth}
-        height={this.props.sliceHeight}
-        mapboxApiAccessToken={this.props.mapboxApiKey}
-        onViewportChange={this.onViewportChange}
-      >
-      </MapGL>
+
+
+    return (      
+       <MapGL
+          {...this.state.viewport}
+          mapboxApiAccessToken={this.props.mapboxApiKey}
+          mapStyle={this.props.mapStyle}
+          perspectiveEnabled
+          width={this.props.sliceWidth}
+          height={this.props.sliceHeight}
+          onChangeViewport={this.onViewportChange}
+        >        
+          <DeckGL
+            {...this.state.viewport}
+            layers={[geosjsonLayer]}
+            onWebGLInitialized={this.initialize}
+            onLayerHover={this._onHover}
+          />          
+           {this._renderTooltip()}
+        </MapGL>
     );
   }
 }
@@ -151,9 +164,6 @@ function mapbox_with_polygon(slice, json, setControlValue) {
     slice.error('Color field must be of form \'rgb(%d, %d, %d)\'');
     return;
   }
-
-  console.log("data repsonse");
-  console.log(json.data.dataResponse);
   
   div.selectAll('*').remove();
   ReactDOM.render(
