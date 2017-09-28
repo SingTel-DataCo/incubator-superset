@@ -63,7 +63,7 @@ class MapboxViz extends React.Component {
                   viewport: {
                       longitude,
                       latitude,
-                      zoom: 5,
+                      zoom: this.props.viewportZoom,
                       startDragLngLat: [longitude, latitude],
                     }
               });           
