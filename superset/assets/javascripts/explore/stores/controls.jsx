@@ -172,6 +172,19 @@ export const controls = {
     schemes: spectrums,
     isLinear: true,
   },
+  
+  rgb_color_scheme: {
+      type: 'SelectControl',
+      freeForm: true,
+      label: 'RGB Color Scheme',
+      default: 'green_red',
+      choices: [
+        ['green_red', 'Green/Red'],
+        ['light_dark_blue', 'Light/Dark Blue'],
+        ['white_yellow', 'White/Yellow'],
+      ],
+      description: 'The color for polygons.',
+    },
 
   normalize_across: {
     type: 'SelectControl',

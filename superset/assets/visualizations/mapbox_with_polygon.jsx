@@ -8,6 +8,7 @@ import MapGL from 'react-map-gl';
 import ViewportMercator from 'viewport-mercator-project';
 import {json as requestJson} from 'd3-request';
 import DeckGL, {GeoJsonLayer} from 'deck.gl';
+import { colorScalerFactory } from '../javascripts/modules/colors';
 
 import './mapbox_with_polygon.css';
 
@@ -109,8 +110,17 @@ class MapboxViz extends React.Component {
 
   render() {
     const { geojson, dmap, minCount, maxCount} = this.state;
-    const colorScale = r => [r * 255, 200 * (1 - r),50];
-
+    const rgb_color_scheme = this.props.rgb_color_scheme;
+    var colorScale = null;
+    
+    if(rgb_color_scheme === 'green_red') {
+      colorScale = r => [r * 255, 200 * (1 - r),50]; // green-red    
+    } else if(rgb_color_scheme === 'light_dark_blue') {
+      colorScale = r => [0, (1-r) * 255, 255]; // light-dark blue
+    } else {
+      colorScale = r => [255, 255, (1-r) * 200]; //fire // white-yellow     
+    }
+    
     const geosjsonLayer = new GeoJsonLayer({
       id: 'geojson-layer',
       data: geojson,

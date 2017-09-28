@@ -1651,7 +1651,7 @@ class MapboxWithPloygonViz(BaseViz):
             "viewportLatitude": fd.get("viewport_latitude"),
             "viewportZoom": fd.get("viewport_zoom"),
             "country": fd.get("select_country"),
-            "linear_color_scheme": fd.get("linear_color_scheme"),
+            "rgb_color_scheme": fd.get("rgb_color_scheme"),
         }
 
 class EventFlowViz(BaseViz):

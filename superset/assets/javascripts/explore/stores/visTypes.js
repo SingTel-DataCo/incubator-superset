@@ -1056,7 +1056,7 @@ export const visTypes = {
               label: 'Options',
               controlSetRows: [
                 ['select_country'],
-                ['linear_color_scheme'],
+                ['rgb_color_scheme'],
               ],
           },
 	      {
@@ -1082,10 +1082,7 @@ export const visTypes = {
           metric: {
             label: 'Metric',
             description: 'Metric to display bottom title',
-          },
-          linear_color_scheme: {
-            renderTrigger: false,
-          },
+          }
 	    },
 	  },
 
