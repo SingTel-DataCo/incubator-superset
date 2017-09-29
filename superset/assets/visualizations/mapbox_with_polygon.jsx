@@ -108,18 +108,21 @@ class MapboxViz extends React.Component {
     );
   }
 
+  colorScale (r, rgb_color_scheme) {
+    if(isNaN(r)) {
+      return [211,211,211];
+    } else if(rgb_color_scheme === 'green_red') {
+      return [r * 255, 200 * (1 - r), 50];   
+    } else if(rgb_color_scheme === 'light_dark_blue') {
+      return [0, (1-r) * 255, 255];
+    } else {
+      return [255, 255, (1-r) * 200]; // white-yellow     
+    }
+  }
+  
   render() {
     const { geojson, dmap, minCount, maxCount} = this.state;
     const rgb_color_scheme = this.props.rgb_color_scheme;
-    var colorScale = null;
-    
-    if(rgb_color_scheme === 'green_red') {
-      colorScale = r => [r * 255, 200 * (1 - r),50]; // green-red    
-    } else if(rgb_color_scheme === 'light_dark_blue') {
-      colorScale = r => [0, (1-r) * 255, 255]; // light-dark blue
-    } else {
-      colorScale = r => [255, 255, (1-r) * 200]; //fire // white-yellow     
-    }
     
     const geosjsonLayer = new GeoJsonLayer({
       id: 'geojson-layer',
@@ -129,7 +132,7 @@ class MapboxViz extends React.Component {
       stroked: true,
       lineWidthMinPixels: 1,
       lineWidthScale: 2,
-      getFillColor: f => colorScale((dmap[f.properties.ISO] - minCount)/(maxCount-minCount)),      
+      getFillColor: f => this.colorScale(((dmap[f.properties.ISO] - minCount)/(maxCount-minCount)), rgb_color_scheme),      
       pickable: true      
     });
 
