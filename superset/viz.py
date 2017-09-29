@@ -1615,6 +1615,45 @@ class MapboxViz(BaseViz):
             "color": fd.get("mapbox_color"),
         }
 
+
+class MapboxWithPloygonViz(BaseViz):
+
+    """Rich maps made with Mapbox"""
+
+    viz_type = "mapbox_with_polygon"
+    verbose_name = _("Mapbox With Ploygon")
+    is_timeseries = False
+    credits = (
+        '<a href=https://www.mapbox.com/mapbox-gl-js/api/>Mapbox GL JS</a>')
+
+    def query_obj(self):
+        qry = super(MapboxWithPloygonViz, self).query_obj()
+        qry['metrics'] = [
+            self.form_data['metric']]
+        qry['groupby'] = [self.form_data['entity']]
+        return qry
+    
+    def get_data(self, df):
+        from superset.data import countries
+        fd = self.form_data
+        cols = [fd.get('entity')]
+        metric = fd.get('metric')
+        cols += [metric]
+        ndf = df[cols]
+        df = ndf
+        df.columns = ['country_id', 'metric']
+        d = df.to_dict(orient='records')
+        return {
+            "dataResponse": d,
+            "mapboxApiKey": config.get('MAPBOX_API_KEY'),
+            "mapStyle": fd.get("mapbox_style"),
+            "viewportLongitude": fd.get("viewport_longitude"),
+            "viewportLatitude": fd.get("viewport_latitude"),
+            "viewportZoom": fd.get("viewport_zoom"),
+            "country": fd.get("select_country"),
+            "rgb_color_scheme": fd.get("rgb_color_scheme"),
+        }
+
 class EventFlowViz(BaseViz):
     """A visualization to explore patterns in event sequences"""
 
@@ -1679,6 +1718,7 @@ viz_types_list = [
     HistogramViz,
     SeparatorViz,
     EventFlowViz,
+    MapboxWithPloygonViz,
 ]
 
 viz_types = OrderedDict([(v.viz_type, v) for v in viz_types_list

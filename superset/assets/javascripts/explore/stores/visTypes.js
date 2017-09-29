@@ -1040,6 +1040,50 @@ export const visTypes = {
       },
     },
   },
+  
+  mapbox_with_polygon: {
+	    label: 'Mapbox with Polygon',
+	    controlPanelSections: [
+	      {
+            label: 'Query',
+            expanded: true,
+            controlSetRows: [
+              ['entity'],
+              ['metric'],
+            ],
+          },
+          {
+              label: 'Options',
+              controlSetRows: [
+                ['select_country'],
+                ['rgb_color_scheme'],
+                ['mapbox_style'],
+              ],
+          },
+	      {
+	        label: 'Viewport',
+	        controlSetRows: [
+	          ['viewport_longitude'],
+	          ['viewport_latitude'],
+	          ['viewport_zoom'],
+	        ],
+	      },
+	    ],
+	    controlOverrides: {
+    	entity: {
+            label: 'Codes of region/province/department',
+            description: "It's the code of your region/province/department in your table. (see documentation for list of ISO 3166-1)",
+          },
+          metric: {
+            label: 'Metric',
+            description: 'Metric to display bottom title',
+          },
+          select_country: {
+              label: 'GeoJSON Layer',
+              description: 'The name of GeoJSON Layer that Superset should display',
+          }
+	    },
+	  },
 
   event_flow: {
     label: 'Event flow',
