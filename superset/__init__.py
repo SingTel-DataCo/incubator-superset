@@ -24,6 +24,8 @@ from superset import utils, config  # noqa
 APP_DIR = os.path.dirname(__file__)
 CONFIG_MODULE = os.environ.get('SUPERSET_CONFIG', 'superset.config')
 
+log = logging.getLogger(__name__)
+
 with open(APP_DIR + '/static/assets/backendSync.json', 'r') as f:
     frontend_config = json.load(f)
 
@@ -146,6 +148,56 @@ appbuilder = AppBuilder(
     security_manager_class=app.config.get("CUSTOM_SECURITY_MANAGER"))
 
 sm = appbuilder.sm
+
+#create a o-auth provider supported by wso2.
+@appbuilder.sm.oauth_user_info_getter
+def get_wso2_user_info_getter(sm, provider, response=None):
+    if provider == 'wso2':
+        me = sm.appbuilder.sm.oauth_remotes[provider].get('userinfo')
+        log.error("User info from WSo2: {0}".format(me.data))
+        #this requires the scope to have 'openid' in the OAUTH_PROVIDERS config.
+        #refer config.py
+        # 'request_token_params': {
+        #     'scope': 'email profile am_application_scope default openid'
+        # }
+        #https://stackoverflow.com/questions/40976563/how-to-get-user-information-from-wso2-is-5-x-using-oauth2-userinfoschema-openi
+        #https://stackoverflow.com/questions/37216880/content-of-userinfo-response-from-wso2-identity-server
+        wso2_username = me.data.get('sub', '')
+        #example wso2 username is 'username@carbon.super', so do a split
+        if utils.isNotEmpty(wso2_username):
+            return {'username': wso2_username.split('@')[0],
+                    'first_name': me.data.get('given_name', ''),
+                    'last_name': me.data.get('family_name', ''),
+                    'email': me.data.get('email', '')}
+        return {}
+    else:
+        if provider == 'github' or provider == 'githublocal':
+            me = sm.appbuilder.sm.oauth_remotes[provider].get('user')
+            log.debug("User info from Github: {0}".format(me.data))
+            return {'username': "github_" + me.data.get('login')}
+        # for twitter
+        if provider == 'twitter':
+            me = sm.appbuilder.sm.oauth_remotes[provider].get('account/settings.json')
+            log.debug("User info from Twitter: {0}".format(me.data))
+            return {'username': "twitter_" + me.data.get('screen_name', '')}
+        # for linkedin
+        if provider == 'linkedin':
+            me = sm.appbuilder.sm.oauth_remotes[provider].get('people/~:(id,email-address,first-name,last-name)?format=json')
+            log.debug("User info from Linkedin: {0}".format(me.data))
+            return {'username': "linkedin_" + me.data.get('id', ''),
+                    'email': me.data.get('email-address', ''),
+                    'first_name': me.data.get('firstName', ''),
+                    'last_name': me.data.get('lastName', '')}
+        # for Google
+        if provider == 'google':
+            me = sm.appbuilder.sm.oauth_remotes[provider].get('userinfo')
+            log.debug("User info from Google: {0}".format(me.data))
+            return {'username': "google_" + me.data.get('id', ''),
+                    'first_name': me.data.get('given_name', ''),
+                    'last_name': me.data.get('family_name', ''),
+                    'email': me.data.get('email', '')}
+        else:
+            return {}
 
 get_session = appbuilder.get_session
 results_backend = app.config.get("RESULTS_BACKEND")

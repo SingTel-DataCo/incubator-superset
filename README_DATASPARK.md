@@ -73,7 +73,53 @@ npm run sync-backend
 npm run dev
 ```
 
+
+### Superset with wso2 authentication
+
+(0)In config.py, set the following
+```
+AUTH_TYPE = AUTH_OAUTH
+AUTH_ROLE_ADMIN = 'Admin'
+AUTH_ROLE_PUBLIC = 'Alpha'
+
+OAUTH_PROVIDERS = [
+    {
+        'name': 'wso2',
+        #'whitelist': ['@gmail.com'],
+        'icon': ' fa-pied-piper-alt ',
+        'token_key': 'access_token',
+        'remote_app': {
+            'base_url': 'https://apistore.dsparkanalytics.com.au:8243',
+            'request_token_params': {
+                'scope': 'email profile am_application_scope default openid'
+            },
+            'request_token_url': None,
+            'access_token_url': '/token',
+            'authorize_url': '/authorize',
+            'consumer_key': '<consumer_key>',
+            'consumer_secret': '<consumer_secret>'
+        }
+    }
+]
+```
+(1)Create a user in wso2 with username say, 'superset_admin'.
+(2)Create an admin user with the SAME username 'superset_admin' in superset using the command 'fabmanager create-admin --app superset'
+(3)run the commands
+
+```
+superset db upgrade; superset init ; superset load_examples;
+superset runserver -d
+```
+
+ 
+(4) To login into superset, use the admin user you created (he will have Admin Role in superset) and assign roles to other wso2 users.
+(5) If there are other wso2 users (Non-Admin), who want to login into superset, 
+they can hit the login page of superset directly (no additional steps required. They will get registered in superset automatically.)
+The Superset Admin user can assign necessary superset roles to these wso2 users.
+See references for help if needed.
+
 ### References:
 
 * [Superset Installation & Configuration](https://superset.incubator.apache.org/installation.html)
 * [CONTRIBUTING.md](CONTRIBUTING.md)
+* https://medium.com/@aungmt/superset-with-google-oauth-3ba7a1c1f459

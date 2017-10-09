@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import backref, relationship
 from dateutil.parser import parse as dparse
 
-from pydruid.client import PyDruid
+from superset.connectors.druid.wso2pydruid import Wso2PyDruid
 from pydruid.utils.aggregators import count
 from pydruid.utils.filters import Dimension, Filter
 from pydruid.utils.postaggregator import (
@@ -82,7 +82,7 @@ class DruidCluster(Model, AuditMixinNullable):
         return self.verbose_name if self.verbose_name else self.cluster_name
 
     def get_pydruid_client(self):
-        cli = PyDruid(
+        cli = Wso2PyDruid(
             "http://{0}:{1}/".format(self.broker_host, self.broker_port),
             self.broker_endpoint)
         return cli
