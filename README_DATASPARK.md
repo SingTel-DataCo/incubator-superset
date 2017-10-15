@@ -81,6 +81,13 @@ npm run dev
 AUTH_TYPE = AUTH_OAUTH
 AUTH_ROLE_ADMIN = 'Admin'
 AUTH_ROLE_PUBLIC = 'Alpha'
+AUTH_USER_REGISTRATION = True
+
+SUPERSET_IP=<ip_address_used_to_access_superset>
+SUPERSET_WEBSERVER_PORT=8888
+
+#disable ssl cert verification, in case u get error SSL: CERTIFICATE_VERIFY_FAILED
+DISABLE_CERTIFICATE_VERIFY=yes
 
 OAUTH_PROVIDERS = [
     {
@@ -96,9 +103,13 @@ OAUTH_PROVIDERS = [
             'request_token_url': None,
             'access_token_url': '/token',
             'authorize_url': '/authorize',
-            'consumer_key': '<consumer_key>',
-            'consumer_secret': '<consumer_secret>'
-        }
+            #consumer_key is used in the logout_url as well.
+            'consumer_key': 'fzznvqwV9edmGou7MaU99zlFiSsa',
+            'consumer_secret': '00zLPgYf8AFwvIiwL4lGhs_xyMQa'
+        },
+        #logout_url points to wso2 carbon server & has 3 placeholders which are automatically filled by the server using 'consumer_key' above, the SUPERSET_WEBSERVER_PORT and SUPERSET_IP params defined in this file above.
+        'logout_url' : 'https://apistore.dsparkanalytics.com.au:9445/commonauth?commonAuthLogout=true&type=oauth2&commonAuthCallerPath=http://__SUPERSETIP__:__SUPERSETPORT__/logout&relyingParty=__CONSUMERKEY__'
+
     }
 ]
 ```
@@ -108,9 +119,13 @@ OAUTH_PROVIDERS = [
 
 ```
 superset db upgrade; superset init ; superset load_examples;
+```
+(4) run the shell command 
+```
+#set this environment variable in case you get the error 'urllib2.URLError SSL: CERTIFICATE_VERIFY_FAILED' after logging into wso2 and want to work around it.
+export DISABLE_CERTIFICATE_VERIFY=yes
 superset runserver -d
 ```
-
  
 (4) To login into superset, use the admin user you created (he will have Admin Role in superset) and assign roles to other wso2 users.
 (5) If there are other wso2 users (Non-Admin), who want to login into superset, 

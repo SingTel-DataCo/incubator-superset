@@ -46,6 +46,7 @@ SUPERSET_WORKERS = 2
 SUPERSET_CELERY_WORKERS = 32
 
 SUPERSET_WEBSERVER_ADDRESS = '0.0.0.0'
+SUPERSET_IP='192.168.1.15'
 SUPERSET_WEBSERVER_PORT = 8088
 SUPERSET_WEBSERVER_TIMEOUT = 60
 EMAIL_NOTIFICATIONS = False
@@ -85,6 +86,10 @@ APP_NAME = "DataSpark"
 
 # Uncomment to setup an App icon
 APP_ICON = "/static/assets/images/superset-logo@2x.png"
+
+
+#Disable SSL certificate verification incase you run into error 'urllib2.URLError SSL: CERTIFICATE_VERIFY_FAILED'
+DISABLE_CERTIFICATE_VERIFY="yes"
 
 # Druid query timezone
 # tz.tzutc() : Using utc timezone
@@ -134,9 +139,13 @@ AUTH_TYPE = AUTH_DB
 #             'request_token_url': None,
 #             'access_token_url': '/token',
 #             'authorize_url': '/authorize',
+#             #consumer_key is used in the logout_url as well.
 #             'consumer_key': 'fzznvqwV9edmGou7MaU99zlFiSsa',
 #             'consumer_secret': '00zLPgYf8AFwvIiwL4lGhs_xyMQa'
-#         }
+#         },
+#         #logout_url has 3 placeholders which are automatically filled by the server using 'consumer_key' above, the SUPERSET_WEBSERVER_PORT and SUPERSET_IP params defined in this file above.
+#         'logout_url' : 'https://apistore.dsparkanalytics.com.au:9445/commonauth?commonAuthLogout=true&type=oauth2&commonAuthCallerPath=http://__SUPERSETIP__:__SUPERSETPORT__/logout&relyingParty=__CONSUMERKEY__'
+#
 #     }
 # ]
 

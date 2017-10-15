@@ -5,6 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import logging
+import ssl
 from logging.handlers import TimedRotatingFileHandler
 
 import json
@@ -33,6 +34,17 @@ with open(APP_DIR + '/static/assets/backendSync.json', 'r') as f:
 app = Flask(__name__)
 app.config.from_object(CONFIG_MODULE)
 conf = app.config
+
+######
+#We were getting 'urllib2.URLError SSL: CERTIFICATE_VERIFY_FAILED' error after logging into wso2, as a workaround we disable certificate verification.
+#https://github.com/servo/servo/issues/5917
+if "yes" == app.config.get('DISABLE_CERTIFICATE_VERIFY'):
+    print("We will be Disabling ssl certificate verification. To enable, set the variable 'DISABLE_CERTIFICATE_VERIFY' in config.py to value other than 'yes' before running")
+    ssl._create_default_https_context = ssl._create_unverified_context
+else:
+    print("We will be Enabling ssl certificate verification")
+######
+
 
 #################################################################
 # Handling manifest file logic at app start
@@ -141,7 +153,26 @@ class MyIndexView(IndexView):
     def index(self):
         return redirect('/superset/welcome')
 
-appbuilder = AppBuilder(
+#Extended Appbuilder
+#takes care of additional logout of wso2 session
+class XAppBuilder(AppBuilder):
+    @property
+    def get_url_for_logout(self):
+        app = self.get_app
+        for _provider in app.config['OAUTH_PROVIDERS']:
+            if _provider['name'] == "wso2":
+                #we expect url to be in the format below with some placeholders.
+                #https://apistore.dsparkanalytics.com.au:9445/commonauth?commonAuthLogout=true&type=oauth2&commonAuthCallerPath=http://__SUPERSETIP__:__SUPERSETPORT__/logout&relyingParty=__CONSUMERKEY__
+                url = str(_provider['logout_url'])
+                port = str(app.config.get("SUPERSET_WEBSERVER_PORT"))
+                url = url.replace( '__SUPERSETPORT__', port)
+                url = url.replace( '__SUPERSETIP__', app.config.get("SUPERSET_IP"))
+                url = url.replace( '__CONSUMERKEY__', _provider['remote_app']["consumer_key"])
+                log.error(url)
+                return  url
+        return super(XAppBuilder, self).get_url_for_logout(self)
+
+appbuilder = XAppBuilder(
     app, db.session,
     base_template='superset/base.html',
     indexview=MyIndexView,
@@ -168,7 +199,7 @@ def get_wso2_user_info_getter(sm, provider, response=None):
             return {'username': wso2_username.split('@')[0],
                     'first_name': me.data.get('given_name', ''),
                     'last_name': me.data.get('family_name', ''),
-                    'email': me.data.get('email', '')}
+                    'email': me.data.get('email', wso2_username)}
         return {}
     else:
         if provider == 'github' or provider == 'githublocal':

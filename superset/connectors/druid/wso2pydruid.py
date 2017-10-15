@@ -27,5 +27,5 @@ class Wso2PyDruid(PyDruid):
         if utils.isNotEmpty(oauth_access_token_string):
             wso2_access_bearer_token_value = "".join(["Bearer ", oauth_access_token_string])
             headers['Authorization'] = wso2_access_bearer_token_value
-        log.error(headers)
+        log.debug(headers)
         return headers, querystr, url
