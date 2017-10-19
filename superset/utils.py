@@ -665,3 +665,7 @@ def get_celery_app(config):
         return _celery_app
     _celery_app = celery.Celery(config_source=config.get('CELERY_CONFIG'))
     return _celery_app
+
+def isNotEmpty(s):
+    ##Is string niether blank or None ?
+    return bool(s and s.strip())

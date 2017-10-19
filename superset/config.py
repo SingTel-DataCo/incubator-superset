@@ -17,6 +17,7 @@ from collections import OrderedDict
 
 from dateutil import tz
 from flask_appbuilder.security.manager import AUTH_DB
+from flask_appbuilder.security.manager import AUTH_OAUTH
 
 from superset.stats_logger import DummyStatsLogger
 
@@ -45,6 +46,7 @@ SUPERSET_WORKERS = 2
 SUPERSET_CELERY_WORKERS = 32
 
 SUPERSET_WEBSERVER_ADDRESS = '0.0.0.0'
+SUPERSET_IP='192.168.1.15'
 SUPERSET_WEBSERVER_PORT = 8088
 SUPERSET_WEBSERVER_TIMEOUT = 60
 EMAIL_NOTIFICATIONS = False
@@ -67,7 +69,7 @@ QUERY_SEARCH_LIMIT = 1000
 WTF_CSRF_ENABLED = True
 
 # Whether to run the web server in debug mode or not
-DEBUG = False
+DEBUG = True
 FLASK_USE_RELOAD = True
 
 # Whether to show the stacktrace on 500 error
@@ -80,10 +82,14 @@ ENABLE_PROXY_FIX = False
 # GLOBALS FOR APP Builder
 # ------------------------------
 # Uncomment to setup Your App name
-APP_NAME = "Superset"
+APP_NAME = "DataSpark"
 
 # Uncomment to setup an App icon
 APP_ICON = "/static/assets/images/superset-logo@2x.png"
+
+
+#Disable SSL certificate verification incase you run into error 'urllib2.URLError SSL: CERTIFICATE_VERIFY_FAILED'
+DISABLE_CERTIFICATE_VERIFY="yes"
 
 # Druid query timezone
 # tz.tzutc() : Using utc timezone
@@ -105,18 +111,43 @@ DRUID_ANALYSIS_TYPES = ['cardinality']
 # AUTH_LDAP : Is for LDAP
 # AUTH_REMOTE_USER : Is for using REMOTE_USER from web server
 AUTH_TYPE = AUTH_DB
+#AUTH_TYPE = AUTH_OAUTH
 
 # Uncomment to setup Full admin role name
-# AUTH_ROLE_ADMIN = 'Admin'
+#AUTH_ROLE_ADMIN = 'Admin'
 
 # Uncomment to setup Public role name, no authentication needed
-# AUTH_ROLE_PUBLIC = 'Public'
+#AUTH_ROLE_PUBLIC = 'Alpha'
 
 # Will allow user self registration
-# AUTH_USER_REGISTRATION = True
-
+#AUTH_USER_REGISTRATION = True
 # The default user self registration role
 # AUTH_USER_REGISTRATION_ROLE = "Public"
+#AUTH_USER_REGISTRATION_ROLE = "Public"
+#
+# OAUTH_PROVIDERS = [
+#     {
+#         'name': 'wso2',
+#         #'whitelist': ['@gmail.com'],
+#         'icon': ' fa-pied-piper-alt ',
+#         'token_key': 'access_token',
+#         'remote_app': {
+#             'base_url': 'https://apistore.dsparkanalytics.com.au:8243',
+#             'request_token_params': {
+#                 'scope': 'email profile am_application_scope default openid'
+#             },
+#             'request_token_url': None,
+#             'access_token_url': '/token',
+#             'authorize_url': '/authorize',
+#             #consumer_key is used in the logout_url as well.
+#             'consumer_key': 'fzznvqwV9edmGou7MaU99zlFiSsa',
+#             'consumer_secret': '00zLPgYf8AFwvIiwL4lGhs_xyMQa'
+#         },
+#         #logout_url has 3 placeholders which are automatically filled by the server using 'consumer_key' above, the SUPERSET_WEBSERVER_PORT and SUPERSET_IP params defined in this file above.
+#         'logout_url' : 'https://apistore.dsparkanalytics.com.au:9445/commonauth?commonAuthLogout=true&type=oauth2&commonAuthCallerPath=http://__SUPERSETIP__:__SUPERSETPORT__/logout&relyingParty=__CONSUMERKEY__'
+#
+#     }
+# ]
 
 # When using LDAP Auth, setup the ldap server
 # AUTH_LDAP_SERVER = "ldap://ldapserver.new"

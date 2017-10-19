@@ -12,6 +12,7 @@ import pickle
 import re
 import time
 import traceback
+from flask import session
 
 import sqlalchemy as sqla
 
