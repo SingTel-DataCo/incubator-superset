@@ -89,7 +89,7 @@ APP_ICON = "/static/assets/images/superset-logo@2x.png"
 
 
 #Disable SSL certificate verification incase you run into error 'urllib2.URLError SSL: CERTIFICATE_VERIFY_FAILED'
-DISABLE_CERTIFICATE_VERIFY="yes"
+DISABLE_CERTIFICATE_VERIFY="no"
 
 # Druid query timezone
 # tz.tzutc() : Using utc timezone
