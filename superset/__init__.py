@@ -159,18 +159,19 @@ class XAppBuilder(AppBuilder):
     @property
     def get_url_for_logout(self):
         app = self.get_app
-        for _provider in app.config['OAUTH_PROVIDERS']:
-            if _provider['name'] == "wso2":
-                #we expect url to be in the format below with some placeholders.
-                #https://apistore.dsparkanalytics.com.au:9445/commonauth?commonAuthLogout=true&type=oauth2&commonAuthCallerPath=http://__SUPERSETIP__:__SUPERSETPORT__/logout&relyingParty=__CONSUMERKEY__
-                url = str(_provider['logout_url'])
-                port = str(app.config.get("SUPERSET_WEBSERVER_PORT"))
-                url = url.replace( '__SUPERSETPORT__', port)
-                url = url.replace( '__SUPERSETIP__', app.config.get("SUPERSET_IP"))
-                url = url.replace( '__CONSUMERKEY__', _provider['remote_app']["consumer_key"])
-                log.error(url)
-                return  url
-        return super(XAppBuilder, self).get_url_for_logout(self)
+        if 'OAUTH_PROVIDERS' in app.config.keys():
+            for _provider in app.config['OAUTH_PROVIDERS']:
+                if _provider['name'] == "wso2":
+                    #we expect url to be in the format below with some placeholders.
+                    #https://apistore.dsparkanalytics.com.au:9445/commonauth?commonAuthLogout=true&type=oauth2&commonAuthCallerPath=http://__SUPERSETIP__:__SUPERSETPORT__/logout&relyingParty=__CONSUMERKEY__
+                    url = str(_provider['logout_url'])
+                    port = str(app.config.get("SUPERSET_WEBSERVER_PORT"))
+                    url = url.replace( '__SUPERSETPORT__', port)
+                    url = url.replace( '__SUPERSETIP__', app.config.get("SUPERSET_IP"))
+                    url = url.replace( '__CONSUMERKEY__', _provider['remote_app']["consumer_key"])
+                    log.error(url)
+                    return  url
+        return AppBuilder.get_url_for_logout.fget(self)
 
 appbuilder = XAppBuilder(
     app, db.session,
