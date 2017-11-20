@@ -17,29 +17,40 @@ Customisations:
 
 ## Development Environment
 
-Mac OS instructions:
+MacOS/CentOS instructions:
 
 ```bash
-# [optional] setup a virtual env and activate it
-virtualenv env
+# Ensure pip is installed.
+[CentOS] sudo yum install -y python-pip
+
+# Install virtualenvwrapper.
+sudo pip install virtualenvwrapper
 source env/bin/activate
 
-# Update the file setup.py
-Under the section install_requires, add the following line:
-'flask==0.12.1',
+# Setup virtualenvwrapper. Add the following in ~/.bashrc.
+export WORKON_HOME=$HOME/.virtualenvs
+export PROJECT_HOME=$HOME/Devel
+source /usr/bin/virtualenvwrapper.sh
+
+# Source env file.
+source ~/.bashrc
+
+# Create a virtualenv named 'superset' with python2 and activate it.
+mkvirtualenv superset --python=/usr/bin/python2
+workon superset 
 
 
-# Install dependencies(For MAC only)
+# Install dependencies
+
+[MacOS]
 brew install pkg-config libffi openssl python
 LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" python setup.py develop
 
-# Install dependencies(For Fedora and RHEL-derivatives Only)
+[CentOS]
 sudo yum upgrade python-setuptools
-sudo yum install gcc gcc-c++ libffi-devel python-devel python-pip python-wheel openssl-devel libsasl2-devel openldap-devel
+sudo yum install gcc gcc-c++ libffi-devel python-devel python-pip python-wheel openssl-devel libsasl2-devel openldap-devel postgresql-devel nodejs npm
 python setup.py develop
 
-# To install postgres driver
-pip install psycopg2
 
 # Copy superset_config.py to PYTHONPATH (Eg: /usr/lib/python2.7)
 # Change owner to dataspark user and set Perm as 755
@@ -56,8 +67,14 @@ superset init
 # Load some data to play with
 superset load_examples
 
-# Start a dev web server
-superset runserver -d
+# [Optional] Start a dev web server
+superset runserver -d -p 8070
+
+# Add superset init.d file
+cp init.d/superset /etc/init.d/superset
+chmod +x /etc/init.d/superset
+touch /var/log/superset.log && chown dataspark:dataspark /var/log/superset.log
+touc /var/run/superset.pid && chown dataspark:dataspark /var/run/superset.pid
 
 # Set up npm dev environment
 cd superset/assets/
