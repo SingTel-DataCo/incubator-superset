@@ -72,7 +72,8 @@ setup(
         'sqlparse==0.2.3',
         'thrift>=0.9.3',
         'thrift-sasl>=0.2.1',
-	    'flask-oauthlib==0.9.4'
+	'flask-oauthlib==0.9.4',
+        'psycopg2==2.7.3.2'
     ],
     extras_require={
         'cors': ['Flask-Cors>=2.0.0'],
